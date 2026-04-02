@@ -1,5 +1,5 @@
 {
-  "serverUrl": "http://localhost:3401",
+  "serverUrl": "http://192.168.10.100:3401",
   "deviceSlug": "a-av03",
   "healthIntervalMs": 60000,
   "logLevel": "debug",
