@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="1964 1497 366 372">
+  <defs>
+    <style>
+      .circle-stroke { fill: none; stroke: url(#gradient); stroke-width: 9; stroke-miterlimit: 10; }
+      .label { font-family: CabinetGroteskVariable-Bold, 'Cabinet Grotesk Variable'; font-variation-settings: 'wght' 700; font-weight: 700; font-size: 34px; fill: #009853; }
+      .ls-02 { letter-spacing: .02em; }
+      .ls-0 { letter-spacing: 0em; }
+      .ls-01 { letter-spacing: .01em; }
+    </style>
+    <linearGradient id="gradient" x1="10030.63" y1="-520.13" x2="10385.6" y2="-520.13" gradientTransform="translate(8409.68 9761.21) rotate(-124.87)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".15" stop-color="#caead7"/>
+      <stop offset=".43" stop-color="#62d7dd"/>
+      <stop offset="1" stop-color="#1fbf85"/>
+    </linearGradient>
+  </defs>
+  <circle class="circle-stroke" cx="2147.3" cy="1682.92" r="172.98"/>
+  <text class="label" transform="translate(2045.42 1694.18)"><tspan class="ls-02" x="0" y="0">G</tspan><tspan class="ls-0" x="24.85" y="0">all</tspan><tspan class="ls-0" x="59.02" y="0">e</tspan><tspan class="ls-0" x="77.48" y="0">ri</tspan><tspan class="ls-0" x="101.08" y="0">e</tspan><tspan class="ls-0" x="119.24" y="0">s </tspan><tspan class="ls-01" x="143.07" y="0">8</tspan><tspan class="ls-0" x="164.08" y="0">-9 </tspan></text>
+</svg>

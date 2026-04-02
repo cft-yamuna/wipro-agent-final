@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 3486.61 2007.18">
+  <defs>
+    <style>
+      .cls-1 {
+        letter-spacing: 0em;
+      }
+
+      .cls-2 {
+        clip-path: url(#clippath-6);
+      }
+
+      .cls-3 {
+        clip-path: url(#clippath-7);
+      }
+
+      .cls-4 {
+        letter-spacing: 0em;
+      }
+
+      .cls-5 {
+        clip-path: url(#clippath-4);
+      }
+
+      .cls-6 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-7 {
+        letter-spacing: .01em;
+      }
+
+      .cls-8 {
+        letter-spacing: 0em;
+      }
+
+      .cls-9 {
+        letter-spacing: 0em;
+      }
+
+      .cls-10 {
+        font-family: CabinetGroteskVariable-Medium, 'Cabinet Grotesk Variable';
+        font-size: 70.77px;
+        font-variation-settings: 'wght' 500;
+        font-weight: 500;
+      }
+
+      .cls-11 {
+        letter-spacing: -.06em;
+      }
+
+      .cls-12 {
+        fill: #8ec8e5;
+      }
+
+      .cls-13 {
+        letter-spacing: 0em;
+      }
+
+      .cls-14 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-15 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-16 {
+        fill: #fff;
+      }
+
+      .cls-17 {
+        opacity: .78;
+      }
+
+      .cls-18 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-19 {
+        opacity: .53;
+      }
+
+      .cls-20 {
+        opacity: .4;
+      }
+
+      .cls-21 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-22 {
+        fill: #e1e1e1;
+      }
+
+      .cls-23, .cls-24, .cls-25, .cls-26, .cls-27, .cls-28, .cls-29, .cls-30 {
+        fill: none;
+      }
+
+      .cls-31 {
+        letter-spacing: 0em;
+      }
+
+      .cls-32 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-33 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-34 {
+        fill: #e0e0e0;
+      }
+
+      .cls-35 {
+        clip-path: url(#clippath-1);
+      }
+
+      .cls-36 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-37 {
+        isolation: isolate;
+      }
+
+      .cls-38 {
+        letter-spacing: 0em;
+      }
+
+      .cls-24, .cls-26, .cls-28, .cls-30 {
+        stroke: #fff;
+        stroke-miterlimit: 10;
+        stroke-width: 2px;
+      }
+
+      .cls-24, .cls-39 {
+        opacity: .28;
+      }
+
+      .cls-40 {
+        opacity: .15;
+      }
+
+      .cls-41 {
+        fill: silver;
+      }
+
+      .cls-42 {
+        letter-spacing: 0em;
+      }
+
+      .cls-43 {
+        clip-path: url(#clippath-3);
+      }
+
+      .cls-44 {
+        font-size: 142.24px;
+      }
+
+      .cls-44, .cls-45 {
+        font-family: CabinetGroteskVariable-Extrabold, 'Cabinet Grotesk Variable';
+        font-variation-settings: 'wght' 800;
+        font-weight: 700;
+      }
+
+      .cls-46 {
+        letter-spacing: .01em;
+      }
+
+      .cls-25 {
+        stroke: #231f20;
+        stroke-width: .75px;
+      }
+
+      .cls-47 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-26 {
+        opacity: .8;
+      }
+
+      .cls-48 {
+        letter-spacing: 0em;
+      }
+
+      .cls-49 {
+        letter-spacing: 0em;
+      }
+
+      .cls-50 {
+        letter-spacing: 0em;
+      }
+
+      .cls-51 {
+        letter-spacing: 0em;
+      }
+
+      .cls-27 {
+        stroke: #969696;
+        stroke-linejoin: bevel;
+        stroke-width: 10px;
+      }
+
+      .cls-29 {
+        stroke: #000;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: .25px;
+      }
+
+      .cls-52 {
+        letter-spacing: 0em;
+      }
+
+      .cls-39 {
+        fill: url(#_10_lpi_50_);
+      }
+
+      .cls-53 {
+        fill: #53469e;
+      }
+
+      .cls-54 {
+        letter-spacing: 0em;
+      }
+
+      .cls-55 {
+        clip-path: url(#clippath-2);
+      }
+
+      .cls-56 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-30 {
+        mix-blend-mode: multiply;
+        opacity: .6;
+      }
+
+      .cls-57 {
+        letter-spacing: 0em;
+      }
+
+      .cls-45 {
+        font-size: 96.14px;
+      }
+
+      .cls-58 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-59 {
+        letter-spacing: 0em;
+      }
+
+      .cls-60 {
+        clip-path: url(#clippath);
+      }
+
+      .cls-61 {
+        fill: #2b4447;
+      }
+
+      .cls-62 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-63 {
+        opacity: .83;
+      }
+
+      .cls-64 {
+        letter-spacing: 0em;
+      }
+
+      .cls-65 {
+        letter-spacing: 0em;
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="cls-12" x="-1.42" y="1.23" width="3486.61" height="2007.18"/>
+    </clipPath>
+    <clipPath id="clippath-1">
+      <rect class="cls-23" x="3613.16" y="16.89" width="3486.61" height="2007.18"/>
+    </clipPath>
+    <clipPath id="clippath-2">
+      <rect class="cls-23" x="3000.61" y="-335.75" width="4711.71" height="2712.45"/>
+    </clipPath>
+    <clipPath id="clippath-3">
+      <rect class="cls-23" x="2995.61" y="-340.75" width="4721.71" height="2722.45"/>
+    </clipPath>
+    <clipPath id="clippath-4">
+      <rect class="cls-23" x="3546.32" y="2284.32" width="3486.61" height="2007.18"/>
+    </clipPath>
+    <clipPath id="clippath-5">
+      <rect class="cls-23" x="3547.35" y="2284.32" width="3485.58" height="2011.18"/>
+    </clipPath>
+    <clipPath id="clippath-6">
+      <rect class="cls-23" x="-71.95" y="2284.32" width="3486.61" height="2011.18"/>
+    </clipPath>
+    <pattern id="_10_lpi_50_" data-name="10 lpi 50%" x="0" y="0" width="72" height="72" patternTransform="translate(21199.85 14360.1) scale(2.49)" patternUnits="userSpaceOnUse" viewBox="0 0 72 72">
+      <g>
+        <rect class="cls-23" width="72" height="72"/>
+        <g>
+          <line class="cls-25" x1="71.75" y1="68.4" x2="144.25" y2="68.4"/>
+          <line class="cls-25" x1="71.75" y1="54" x2="144.25" y2="54"/>
+          <line class="cls-25" x1="71.75" y1="39.6" x2="144.25" y2="39.6"/>
+          <line class="cls-25" x1="71.75" y1="25.2" x2="144.25" y2="25.2"/>
+          <line class="cls-25" x1="71.75" y1="10.8" x2="144.25" y2="10.8"/>
+          <line class="cls-25" x1="71.75" y1="61.2" x2="144.25" y2="61.2"/>
+          <line class="cls-25" x1="71.75" y1="46.8" x2="144.25" y2="46.8"/>
+          <line class="cls-25" x1="71.75" y1="32.4" x2="144.25" y2="32.4"/>
+          <line class="cls-25" x1="71.75" y1="18" x2="144.25" y2="18"/>
+          <line class="cls-25" x1="71.75" y1="3.6" x2="144.25" y2="3.6"/>
+        </g>
+        <g>
+          <line class="cls-25" x1="-.25" y1="68.4" x2="72.25" y2="68.4"/>
+          <line class="cls-25" x1="-.25" y1="54" x2="72.25" y2="54"/>
+          <line class="cls-25" x1="-.25" y1="39.6" x2="72.25" y2="39.6"/>
+          <line class="cls-25" x1="-.25" y1="25.2" x2="72.25" y2="25.2"/>
+          <line class="cls-25" x1="-.25" y1="10.8" x2="72.25" y2="10.8"/>
+          <line class="cls-25" x1="-.25" y1="61.2" x2="72.25" y2="61.2"/>
+          <line class="cls-25" x1="-.25" y1="46.8" x2="72.25" y2="46.8"/>
+          <line class="cls-25" x1="-.25" y1="32.4" x2="72.25" y2="32.4"/>
+          <line class="cls-25" x1="-.25" y1="18" x2="72.25" y2="18"/>
+          <line class="cls-25" x1="-.25" y1="3.6" x2="72.25" y2="3.6"/>
+        </g>
+        <g>
+          <line class="cls-25" x1="-72.25" y1="68.4" x2=".25" y2="68.4"/>
+          <line class="cls-25" x1="-72.25" y1="54" x2=".25" y2="54"/>
+          <line class="cls-25" x1="-72.25" y1="39.6" x2=".25" y2="39.6"/>
+          <line class="cls-25" x1="-72.25" y1="25.2" x2=".25" y2="25.2"/>
+          <line class="cls-25" x1="-72.25" y1="10.8" x2=".25" y2="10.8"/>
+          <line class="cls-25" x1="-72.25" y1="61.2" x2=".25" y2="61.2"/>
+          <line class="cls-25" x1="-72.25" y1="46.8" x2=".25" y2="46.8"/>
+          <line class="cls-25" x1="-72.25" y1="32.4" x2=".25" y2="32.4"/>
+          <line class="cls-25" x1="-72.25" y1="18" x2=".25" y2="18"/>
+          <line class="cls-25" x1="-72.25" y1="3.6" x2=".25" y2="3.6"/>
+        </g>
+      </g>
+    </pattern>
+    <clipPath id="clippath-7">
+      <rect class="cls-23" x="-72.95" y="2284.32" width="3486.61" height="2107.67"/>
+    </clipPath>
+  </defs>
+  <text class="cls-61" transform="translate(1418.49 831.78)"><tspan class="cls-44"><tspan class="cls-15" x="0" y="0">W</tspan><tspan class="cls-4" x="132.43" y="0">el</tspan><tspan class="cls-52" x="246.07" y="0">c</tspan><tspan class="cls-64" x="319.47" y="0">om</tspan><tspan class="cls-46" x="519.74" y="0">e</tspan></tspan><tspan class="cls-10"><tspan class="cls-36" x="-423.05" y="126.58">E</tspan><tspan class="cls-13" x="-384.27" y="126.58">xpl</tspan><tspan class="cls-59" x="-296.3" y="126.58">o</tspan><tspan class="cls-6" x="-258.65" y="126.58">r</tspan><tspan x="-229.77" y="126.58">e t</tspan><tspan class="cls-59" x="-149.44" y="126.58">h</tspan><tspan x="-111.65" y="126.58">e </tspan><tspan class="cls-50" x="-58.36" y="126.58">g</tspan><tspan x="-22.76" y="126.58">all</tspan><tspan class="cls-38" x="44.26" y="126.58">e</tspan><tspan x="81.84" y="126.58">ri</tspan><tspan class="cls-48" x="127.07" y="126.58">e</tspan><tspan x="164.08" y="126.58">s </tspan><tspan class="cls-14" x="212.56" y="126.58">t</tspan><tspan x="237.19" y="126.58">o di</tspan><tspan class="cls-54" x="344.62" y="126.58">s</tspan><tspan class="cls-65" x="376.83" y="126.58">c</tspan><tspan class="cls-33" x="413.49" y="126.58">ov</tspan><tspan class="cls-38" x="481.36" y="126.58">e</tspan><tspan x="518.94" y="126.58">r c</tspan><tspan class="cls-31" x="601.39" y="126.58">h</tspan><tspan x="639.47" y="126.58">a</tspan><tspan class="cls-54" x="675.63" y="126.58">p</tspan><tspan class="cls-14" x="713.57" y="126.58">t</tspan><tspan class="cls-38" x="738.2" y="126.58">e</tspan><tspan class="cls-6" x="775.78" y="126.58">r</tspan><tspan x="804.66" y="126.58">s </tspan><tspan class="cls-57" x="853.14" y="126.58">f</tspan><tspan class="cls-6" x="879.04" y="126.58">r</tspan><tspan class="cls-38" x="907.91" y="126.58">o</tspan><tspan class="cls-13" x="945.57" y="126.58">m </tspan></tspan><tspan class="cls-10"><tspan x="-401.57" y="213.69">Wi</tspan><tspan class="cls-59" x="-320.61" y="213.69">p</tspan><tspan class="cls-6" x="-282.11" y="213.69">r</tspan><tspan x="-253.23" y="213.69">o’s</tspan><tspan class="cls-8" x="-167.31" y="213.69"> </tspan><tspan x="-151.11" y="213.69">j</tspan><tspan class="cls-59" x="-135.61" y="213.69">o</tspan><tspan x="-97.95" y="213.69">u</tspan><tspan class="cls-65" x="-60.02" y="213.69">r</tspan><tspan class="cls-59" x="-30.65" y="213.69">n</tspan><tspan class="cls-32" x="7.15" y="213.69">e</tspan><tspan x="43.88" y="213.69">y: </tspan><tspan class="cls-57" x="108.78" y="213.69">f</tspan><tspan class="cls-6" x="134.68" y="213.69">r</tspan><tspan class="cls-38" x="163.56" y="213.69">o</tspan><tspan x="201.21" y="213.69">m i</tspan><tspan class="cls-21" x="289.96" y="213.69">t</tspan><tspan x="315.51" y="213.69">s </tspan><tspan class="cls-59" x="363.99" y="213.69">o</tspan><tspan class="cls-42" x="401.64" y="213.69">rigi</tspan><tspan class="cls-58" x="498.1" y="213.69">n</tspan><tspan x="534.97" y="213.69">s a</tspan><tspan class="cls-59" x="619.62" y="213.69">n</tspan><tspan x="657.41" y="213.69">d </tspan><tspan class="cls-1" x="711.62" y="213.69">v</tspan><tspan x="744.53" y="213.69">al</tspan><tspan class="cls-59" x="796.13" y="213.69">u</tspan><tspan class="cls-48" x="833.92" y="213.69">e</tspan><tspan x="870.94" y="213.69">s </tspan><tspan class="cls-47" x="919.42" y="213.69">t</tspan><tspan x="944.04" y="213.69">o </tspan></tspan><tspan class="cls-10"><tspan x="-253.02" y="300.8">i</tspan><tspan class="cls-18" x="-237.59" y="300.8">t</tspan><tspan x="-212.05" y="300.8">s </tspan><tspan class="cls-59" x="-163.57" y="300.8">b</tspan><tspan class="cls-58" x="-124.99" y="300.8">u</tspan><tspan x="-88.12" y="300.8">si</tspan><tspan class="cls-59" x="-39.78" y="300.8">n</tspan><tspan class="cls-48" x="-1.99" y="300.8">e</tspan><tspan class="cls-56" x="35.03" y="300.8">s</tspan><tspan class="cls-54" x="67.09" y="300.8">se</tspan><tspan x="136.3" y="300.8">s a</tspan><tspan class="cls-59" x="220.95" y="300.8">n</tspan><tspan x="258.74" y="300.8">d </tspan><tspan class="cls-9" x="312.95" y="300.8">g</tspan><tspan class="cls-6" x="348.48" y="300.8">r</tspan><tspan class="cls-33" x="377.36" y="300.8">o</tspan><tspan x="413.46" y="300.8">wth </tspan><tspan class="cls-33" x="545.66" y="300.8">ov</tspan><tspan class="cls-38" x="613.53" y="300.8">e</tspan><tspan x="651.12" y="300.8">r ti</tspan><tspan class="cls-59" x="738.94" y="300.8">m</tspan><tspan class="cls-49" x="796.55" y="300.8">e</tspan><tspan class="cls-42" x="833.64" y="300.8">.</tspan></tspan><tspan class="cls-45"><tspan class="cls-11" x="33.39" y="443.1">T</tspan><tspan class="cls-7" x="82.62" y="443.1">ap </tspan><tspan class="cls-62" x="207.98" y="443.1">t</tspan><tspan class="cls-7" x="244.99" y="443.1">o B</tspan><tspan class="cls-51" x="381.32" y="443.1">e</tspan><tspan class="cls-7" x="432.75" y="443.1">gin</tspan></tspan></text>
+</svg>

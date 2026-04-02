@@ -1,0 +1,274 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="330" height="260" viewBox="2265 305 330 260">
+  <defs>
+    <style>
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5, .cls-6, .cls-7, .cls-8 {
+        fill: none;
+      }
+      .cls-10 {
+        letter-spacing: 0em;
+      }
+      .cls-11, .cls-18, .cls-19, .cls-20, .cls-21, .cls-22, .cls-23 {
+        opacity: .8;
+      }
+      .cls-11, .cls-2, .cls-3, .cls-13, .cls-24, .cls-15, .cls-16, .cls-25, .cls-8, .cls-17 {
+        stroke-miterlimit: 10;
+      }
+      .cls-26, .cls-27, .cls-28, .cls-29, .cls-30, .cls-31 {
+        fill: #494949;
+      }
+      .cls-26, .cls-28, .cls-32, .cls-33 {
+        font-family: CabinetGroteskVariable-Regular, 'Cabinet Grotesk Variable';
+        font-variation-settings: 'wght' 400;
+      }
+      .cls-26, .cls-30, .cls-33 {
+        font-size: 50px;
+      }
+      .cls-45, .cls-21 {
+        fill: #0c4c2b;
+      }
+      .cls-55 {
+        letter-spacing: -.02em;
+      }
+      .cls-59 {
+        letter-spacing: .01em;
+      }
+      .cls-61 {
+        letter-spacing: -.01em;
+      }
+      .cls-66 {
+        letter-spacing: -.05em;
+      }
+      .cls-28 {
+        font-size: 25px;
+      }
+      .cls-78 {
+        letter-spacing: .14em;
+      }
+      .cls-78, .cls-29, .cls-30, .cls-79, .cls-80, .cls-81, .cls-82, .cls-83 {
+        font-family: CabinetGroteskVariable-Light, 'Cabinet Grotesk Variable';
+        font-variation-settings: 'wght' 300;
+        font-weight: 300;
+      }
+      .cls-78, .cls-84, .cls-85, .cls-86 {
+        font-size: 20.48px;
+      }
+      .cls-29 {
+        font-size: 35px;
+      }
+      .cls-31, .cls-91, .cls-92, .cls-93, .cls-94, .cls-95, .cls-96, .cls-84, .cls-97, .cls-98, .cls-99, .cls-85, .cls-86, .cls-100, .cls-101, .cls-102, .cls-103 {
+        font-family: CabinetGroteskVariable-Medium, 'Cabinet Grotesk Variable';
+        font-variation-settings: 'wght' 500;
+        font-weight: 500;
+      }
+      .cls-31, .cls-79, .cls-80, .cls-81, .cls-82, .cls-83 {
+        font-size: 27.74px;
+      }
+      .cls-91, .cls-92, .cls-93, .cls-94, .cls-95, .cls-96, .cls-97, .cls-98, .cls-99, .cls-100, .cls-101, .cls-102, .cls-103 {
+        font-size: 40px;
+      }
+      .cls-91, .cls-92, .cls-93, .cls-94, .cls-98, .cls-99, .cls-102, .cls-103 {
+        fill: #0f6866;
+      }
+      .cls-91, .cls-101 {
+        letter-spacing: -.01em;
+      }
+      .cls-104 {
+        opacity: .53;
+      }
+      .cls-18, .cls-105 {
+        fill: #f4f4f4;
+      }
+      .cls-106 {
+        fill: #094c4c;
+        font-size: 55.89px;
+      }
+      .cls-106, .cls-107, .cls-108, .cls-13, .cls-109, .cls-110, .cls-70, .cls-22 {
+        font-family: CabinetGroteskVariable-Bold, 'Cabinet Grotesk Variable';
+        font-variation-settings: 'wght' 700;
+        font-weight: 700;
+      }
+      .cls-2 {
+        stroke: #494949;
+        stroke-width: .69px;
+      }
+      .cls-107 {
+        font-size: 28.8px;
+      }
+      .cls-107, .cls-108, .cls-112 {
+        fill: #0c4728;
+      }
+      .cls-92 {
+        letter-spacing: -.02em;
+      }
+      .cls-108 {
+        font-size: 55.89px;
+      }
+      .cls-48, .cls-124, .cls-20 {
+        fill: #063f21;
+      }
+      .cls-32, .cls-33 {
+        fill: #231f20;
+      }
+      .cls-134 {
+        letter-spacing: .16em;
+      }
+      .cls-109 {
+        fill: #727272;
+      }
+      .cls-109, .cls-110, .cls-22 {
+        font-size: 9px;
+      }
+      .cls-124, .cls-25 {
+        opacity: .57;
+      }
+      .cls-79 {
+        letter-spacing: .02em;
+      }
+      .cls-148 {
+        letter-spacing: .14em;
+      }
+      .cls-94 {
+        letter-spacing: -.01em;
+      }
+      .cls-80 {
+        letter-spacing: .04em;
+      }
+      .cls-159 {
+        letter-spacing: 0em;
+      }
+      .cls-95 {
+        letter-spacing: 0em;
+      }
+      .cls-95, .cls-96, .cls-97, .cls-100, .cls-101 {
+        opacity: .8;
+      }
+      .cls-95, .cls-96, .cls-97, .cls-100, .cls-101, .cls-23 {
+        fill: #049e54;
+      }
+      .cls-96 {
+        letter-spacing: 0em;
+      }
+      .cls-165 {
+        letter-spacing: -.02em;
+      }
+      .cls-24 {
+        fill: url(#linear-gradient-4);
+        opacity: .9;
+        stroke-width: 3px;
+      }
+      .cls-24, .cls-25 {
+        stroke: #7c7c7c;
+      }
+      .cls-84 {
+        letter-spacing: .13em;
+      }
+      .cls-97, .cls-98 {
+        letter-spacing: 0em;
+      }
+      .cls-99 {
+        letter-spacing: .01em;
+      }
+      .cls-22 {
+        fill: #014925;
+      }
+      .cls-181 {
+        letter-spacing: 0em;
+      }
+      .cls-183 {
+        letter-spacing: -.02em;
+      }
+      .cls-85 {
+        letter-spacing: .14em;
+      }
+      .cls-81 {
+        letter-spacing: .04em;
+      }
+      .cls-86 {
+        letter-spacing: .14em;
+      }
+      .cls-200 {
+        letter-spacing: -.02em;
+      }
+      .cls-25 {
+        fill: url(#linear-gradient-8);
+        mix-blend-mode: screen;
+        stroke-width: .95px;
+      }
+      .cls-201 {
+        letter-spacing: -.03em;
+      }
+      .cls-202 {
+        letter-spacing: -.04em;
+      }
+      .cls-203 {
+        fill: url(#linear-gradient);
+      }
+      .cls-204 {
+        letter-spacing: -.01em;
+      }
+      .cls-205 {
+        letter-spacing: 0em;
+      }
+      .cls-206 {
+        letter-spacing: 0em;
+      }
+      .cls-207 {
+        letter-spacing: .02em;
+      }
+      .cls-208 {
+        letter-spacing: -.05em;
+      }
+      .cls-82 {
+        letter-spacing: .04em;
+      }
+      .cls-209 {
+        clip-path: url(#clippath);
+      }
+      .cls-210 {
+        letter-spacing: -.03em;
+      }
+      .cls-211 {
+        letter-spacing: -.01em;
+      }
+      .cls-212 {
+        letter-spacing: -.02em;
+      }
+      .cls-102 {
+        letter-spacing: -.05em;
+      }
+      .cls-213 {
+        letter-spacing: 0em;
+      }
+      .cls-103 {
+        letter-spacing: -.01em;
+      }
+      .cls-214 {
+        fill: #fffdfd;
+      }
+      .cls-83 {
+        letter-spacing: .04em;
+      }
+      .cls-215 {
+        letter-spacing: -.02em;
+      }
+    </style>
+  </defs>
+      <g>
+        <text class="cls-30" transform="translate(2282.33 404.61) scale(.7)"><tspan class="cls-183" x="0" y="0">G</tspan><tspan class="cls-165" x="33.05" y="0">A</tspan><tspan class="cls-208" x="62.05" y="0">LL</tspan><tspan class="cls-200" x="109.75" y="0">E</tspan><tspan class="cls-66" x="137" y="0">R</tspan><tspan class="cls-181" x="165.5" y="0">Y</tspan></text>
+        <text transform="translate(2418.34 404.61)"><tspan><tspan class="cls-30" x="0" y="0"> </tspan><tspan class="cls-29" x="11" y="0">8</tspan><tspan class="cls-30" x="32.14" y="0">:</tspan><tspan class="cls-26" x="39.84" y="0"> </tspan><tspan class="cls-100" x="50.84" y="0">Spiri</tspan><tspan class="cls-95" x="131.32" y="0">t</tspan><tspan class="cls-100" x="146.32" y="0"> </tspan><tspan class="cls-96" x="155.12" y="0">o</tspan><tspan class="cls-100" x="176.08" y="0">f Wi</tspan><tspan class="cls-97" x="244.87" y="0">p</tspan><tspan class="cls-101" x="266.63" y="0">r</tspan><tspan class="cls-100" x="282.95" y="0">o</tspan></tspan></text>
+        <text class="cls-30" transform="translate(2282.33 464.61) scale(.7)"><tspan class="cls-183" x="0" y="0">G</tspan><tspan class="cls-165" x="33.05" y="0">A</tspan><tspan class="cls-208" x="62.05" y="0">LL</tspan><tspan class="cls-200" x="109.75" y="0">E</tspan><tspan class="cls-66" x="137" y="0">R</tspan><tspan class="cls-181" x="165.5" y="0">Y</tspan></text>
+        <text transform="translate(2418.34 464.61)"><tspan><tspan class="cls-30" x="0" y="0"> </tspan><tspan class="cls-29" x="11" y="0">9</tspan><tspan class="cls-30" x="31.4" y="0">:</tspan><tspan class="cls-33" x="39.1" y="0"> </tspan><tspan class="cls-92" x="50.1" y="0">A</tspan><tspan class="cls-93" x="74.9" y="0">zim </tspan><tspan class="cls-94" x="144.5" y="0">P</tspan><tspan class="cls-91" x="168.1" y="0">r</tspan><tspan class="cls-98" x="184.42" y="0">e</tspan><tspan class="cls-99" x="205.66" y="0">m</tspan><tspan class="cls-93" x="238.9" y="0">ji </tspan><tspan class="cls-102" x="265.18" y="0">F</tspan><tspan class="cls-98" x="285.42" y="0">o</tspan><tspan class="cls-93" x="306.7" y="0">u</tspan><tspan class="cls-98" x="328.14" y="0">n</tspan><tspan class="cls-93" x="349.5" y="0">d</tspan><tspan class="cls-103" x="371.34" y="0">A</tspan><tspan class="cls-93" x="391.22" y="0">ti</tspan><tspan class="cls-98" x="415.22" y="0">o</tspan><tspan class="cls-93" x="436.5" y="0">n</tspan></tspan></text>
+        <g>
+          <text class="cls-28" transform="translate(2284.42 533.81)"><tspan class="cls-59" x="0" y="0">G</tspan><tspan x="17.57" y="0">all</tspan><tspan class="cls-10" x="40.35" y="0">e</tspan><tspan class="cls-159" x="53.37" y="0">r</tspan><tspan x="63.42" y="0">y Highlig</tspan><tspan class="cls-61" x="151.2" y="0">h</tspan><tspan class="cls-55" x="164.04" y="0">t</tspan><tspan x="172.89" y="0">s</tspan></text>
+          <g>
+            <circle class="cls-2" cx="2491.57" cy="528.09" r="15.36"/>
+            <polygon class="cls-2" points="2481.06 524.81 2488.83 524.2 2491.57 517.02 2494.64 524.11 2502.47 524.5 2496.52 529.63 2498.56 537.19 2491.85 533.13 2485.35 537.24 2487.12 529.76 2481.06 524.81"/>
+          </g>
+        </g>
+        <g>
+          <text class="cls-27" transform="translate(2284.11 327.61)"><tspan class="cls-82" x="0" y="0">Vi</tspan><tspan class="cls-79" x="24.3" y="0">e</tspan><tspan class="cls-81" x="39.14" y="0">wi</tspan><tspan class="cls-83" x="66.77" y="0">n</tspan><tspan class="cls-82" x="82.28" y="0">g Ti</tspan><tspan class="cls-80" x="127.41" y="0">m</tspan><tspan class="cls-81" x="150.77" y="0">e:</tspan><tspan class="cls-78" x="171.55" y="0"> </tspan><tspan class="cls-84" x="178.92" y="0">3</tspan><tspan class="cls-86" x="193.96" y="0">0 - </tspan><tspan class="cls-85" x="234.23" y="0">3</tspan><tspan class="cls-86" x="249.46" y="0">5 </tspan></text>
+          <text class="cls-31" transform="translate(2556.52 327.61) scale(.7)"><tspan class="cls-134" x="0" y="0">MI</tspan><tspan class="cls-148" x="38.28" y="0">N</tspan></text>
+        </g>
+      </g>
+</svg>

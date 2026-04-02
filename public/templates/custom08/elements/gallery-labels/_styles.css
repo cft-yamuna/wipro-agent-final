@@ -1,0 +1,556 @@
+
+      .cls-1 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-2 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-3 {
+        fill: #634329;
+      }
+
+      .cls-3, .cls-4, .cls-5, .cls-6, .cls-7, .cls-8, .cls-9, .cls-10, .cls-11, .cls-12 {
+        font-family: CabinetGroteskVariable-Bold, 'Cabinet Grotesk Variable';
+        font-variation-settings: 'wght' 700;
+        font-weight: 700;
+      }
+
+      .cls-3, .cls-6 {
+        font-size: 11.86px;
+      }
+
+      .cls-13 {
+        letter-spacing: 0em;
+      }
+
+      .cls-14 {
+        fill: #7f654b;
+      }
+
+      .cls-15 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-16 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-17 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-18 {
+        letter-spacing: -.05em;
+      }
+
+      .cls-19 {
+        letter-spacing: -.06em;
+      }
+
+      .cls-20 {
+        fill: url(#linear-gradient-2);
+      }
+
+      .cls-21 {
+        letter-spacing: .01em;
+      }
+
+      .cls-22 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-23 {
+        mix-blend-mode: overlay;
+        opacity: .4;
+      }
+
+      .cls-24 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-25 {
+        fill: #e20e0e;
+      }
+
+      .cls-26 {
+        letter-spacing: 0em;
+      }
+
+      .cls-27 {
+        opacity: .83;
+      }
+
+      .cls-27, .cls-28, .cls-29 {
+        fill: #e1e1e1;
+      }
+
+      .cls-30 {
+        fill: url(#linear-gradient);
+        opacity: .9;
+        stroke-width: 3.95px;
+      }
+
+      .cls-30, .cls-31 {
+        stroke: #7c7c7c;
+      }
+
+      .cls-30, .cls-31, .cls-32, .cls-33, .cls-34, .cls-35, .cls-36, .cls-12 {
+        stroke-miterlimit: 10;
+      }
+
+      .cls-37 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-38, .cls-39, .cls-40 {
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      .cls-38, .cls-41, .cls-32, .cls-33, .cls-34, .cls-35, .cls-42, .cls-12 {
+        fill: #fff;
+      }
+
+      .cls-38, .cls-32, .cls-33, .cls-34, .cls-35, .cls-12 {
+        stroke: #fff;
+      }
+
+      .cls-38, .cls-40 {
+        stroke-width: .12px;
+      }
+
+      .cls-39 {
+        stroke-width: .33px;
+      }
+
+      .cls-39, .cls-43, .cls-44, .cls-40, .cls-36 {
+        fill: none;
+      }
+
+      .cls-39, .cls-40 {
+        stroke: #000;
+      }
+
+      .cls-45 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-4 {
+        fill: #773736;
+        font-size: 11.86px;
+      }
+
+      .cls-46 {
+        letter-spacing: 0em;
+      }
+
+      .cls-31 {
+        fill: url(#linear-gradient-7);
+        mix-blend-mode: screen;
+        opacity: .57;
+        stroke-width: 1.32px;
+      }
+
+      .cls-47 {
+        letter-spacing: -.05em;
+      }
+
+      .cls-5 {
+        font-size: 6.89px;
+        opacity: .59;
+      }
+
+      .cls-5, .cls-48 {
+        fill: #707070;
+      }
+
+      .cls-49 {
+        letter-spacing: 0em;
+      }
+
+      .cls-50 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-51 {
+        opacity: .53;
+      }
+
+      .cls-6 {
+        fill: #3d2f25;
+      }
+
+      .cls-52 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-53, .cls-29, .cls-34, .cls-54, .cls-55 {
+        opacity: .8;
+      }
+
+      .cls-53, .cls-56 {
+        fill: #f4f4f4;
+      }
+
+      .cls-57 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-58 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-59 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-60 {
+        letter-spacing: .02em;
+      }
+
+      .cls-61 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-62 {
+        fill: url(#linear-gradient-4);
+      }
+
+      .cls-7 {
+        font-size: 11.86px;
+      }
+
+      .cls-7, .cls-8, .cls-9, .cls-10, .cls-11 {
+        fill: #727272;
+      }
+
+      .cls-63 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-64 {
+        letter-spacing: 0em;
+      }
+
+      .cls-65 {
+        fill: #b2b2b2;
+      }
+
+      .cls-32 {
+        opacity: .28;
+      }
+
+      .cls-32, .cls-33, .cls-34 {
+        stroke-width: .49px;
+      }
+
+      .cls-66 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-67 {
+        letter-spacing: 0em;
+      }
+
+      .cls-68 {
+        fill: #e0e0e0;
+      }
+
+      .cls-69 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-70 {
+        fill: url(#linear-gradient-3);
+      }
+
+      .cls-71 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-72 {
+        letter-spacing: 0em;
+      }
+
+      .cls-73 {
+        fill: url(#linear-gradient-5);
+      }
+
+      .cls-8 {
+        font-size: 11.86px;
+      }
+
+      .cls-74 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-75 {
+        isolation: isolate;
+      }
+
+      .cls-76 {
+        letter-spacing: 0em;
+      }
+
+      .cls-77 {
+        fill: #3a3a3a;
+      }
+
+      .cls-78 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-79, .cls-55 {
+        fill: #a57c5b;
+      }
+
+      .cls-80 {
+        letter-spacing: -.1em;
+      }
+
+      .cls-81 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-82 {
+        opacity: .15;
+      }
+
+      .cls-83 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-84 {
+        fill: silver;
+      }
+
+      .cls-85 {
+        letter-spacing: -.1em;
+      }
+
+      .cls-86 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-87 {
+        letter-spacing: -.06em;
+      }
+
+      .cls-9 {
+        font-size: 11.86px;
+      }
+
+      .cls-88 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-89 {
+        opacity: .66;
+      }
+
+      .cls-35, .cls-42 {
+        font-size: 9.93px;
+      }
+
+      .cls-35, .cls-42, .cls-90, .cls-91 {
+        font-family: ProximaNova-Semibold, 'Proxima Nova';
+        font-weight: 600;
+      }
+
+      .cls-35, .cls-12 {
+        stroke-width: .49px;
+      }
+
+      .cls-92 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-93 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-10 {
+        font-size: 11.86px;
+      }
+
+      .cls-94 {
+        letter-spacing: .01em;
+      }
+
+      .cls-95 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-96 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-44 {
+        stroke: #969696;
+        stroke-linejoin: bevel;
+        stroke-width: 10px;
+      }
+
+      .cls-97 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-98 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-99 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-54 {
+        fill: #c96e69;
+      }
+
+      .cls-100 {
+        letter-spacing: .02em;
+      }
+
+      .cls-101 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-102 {
+        letter-spacing: 0em;
+      }
+
+      .cls-103 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-104 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-105, .cls-90, .cls-91 {
+        fill: #53469e;
+      }
+
+      .cls-106 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-107 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-108 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-109 {
+        fill: #dadada;
+      }
+
+      .cls-110 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-111 {
+        fill: url(#_10_dpi_30_);
+      }
+
+      .cls-112 {
+        letter-spacing: 0em;
+      }
+
+      .cls-11 {
+        font-size: 11.86px;
+      }
+
+      .cls-113 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-114 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-115 {
+        fill: #ededed;
+      }
+
+      .cls-116 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-117 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-118 {
+        letter-spacing: 0em;
+      }
+
+      .cls-119 {
+        letter-spacing: -.05em;
+      }
+
+      .cls-36 {
+        stroke: url(#linear-gradient-6);
+        stroke-width: 3.29px;
+      }
+
+      .cls-12 {
+        font-size: 15.49px;
+      }
+
+      .cls-90 {
+        font-size: 7.73px;
+      }
+
+      .cls-120 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-121 {
+        clip-path: url(#clippath);
+      }
+
+      .cls-122 {
+        letter-spacing: -.06em;
+      }
+
+      .cls-123 {
+        letter-spacing: -.06em;
+      }
+
+      .cls-124 {
+        letter-spacing: -.01em;
+      }
+
+      .cls-125 {
+        letter-spacing: -.04em;
+      }
+
+      .cls-126 {
+        letter-spacing: -.03em;
+      }
+
+      .cls-127 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-91 {
+        font-size: 9.03px;
+      }
+
+      .cls-128 {
+        letter-spacing: -.06em;
+      }
+
+      .cls-129 {
+        letter-spacing: -.02em;
+      }
+
+      .cls-130 {
+        letter-spacing: -.01em;
+      }
+    

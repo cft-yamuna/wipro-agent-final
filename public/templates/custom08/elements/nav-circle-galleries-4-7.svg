@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="1533 1497 366 372">
+  <defs>
+    <style>
+      .circle-stroke { fill: none; stroke: url(#gradient); stroke-width: 9; stroke-miterlimit: 10; }
+      .label { font-family: CabinetGroteskVariable-Bold, 'Cabinet Grotesk Variable'; font-variation-settings: 'wght' 700; font-weight: 700; font-size: 34px; fill: #6377db; }
+      .ls-02 { letter-spacing: .02em; }
+      .ls-0 { letter-spacing: 0em; }
+      .ls-n02 { letter-spacing: -.02em; }
+    </style>
+    <linearGradient id="gradient" x1="9470.32" y1="222.12" x2="9825.29" y2="222.12" gradientTransform="translate(8047.79 -5599.92) rotate(129.68)" gradientUnits="userSpaceOnUse">
+      <stop offset=".04" stop-color="#fcffc2" stop-opacity=".8"/>
+      <stop offset=".28" stop-color="#ffb140" stop-opacity=".8"/>
+      <stop offset=".33" stop-color="#f6af47" stop-opacity=".8"/>
+      <stop offset=".4" stop-color="#ddaa5d" stop-opacity=".8"/>
+      <stop offset=".48" stop-color="#b4a381" stop-opacity=".8"/>
+      <stop offset=".56" stop-color="#7c98b3" stop-opacity=".8"/>
+      <stop offset=".64" stop-color="#458ee5" stop-opacity=".8"/>
+      <stop offset="1" stop-color="#747ad7" stop-opacity=".8"/>
+    </linearGradient>
+  </defs>
+  <circle class="circle-stroke" cx="1716.15" cy="1682.92" r="172.98"/>
+  <text class="label" transform="translate(1620.06 1694.18)"><tspan class="ls-02" x="0" y="0">G</tspan><tspan class="ls-0" x="24.85" y="0">all</tspan><tspan class="ls-0" x="59.02" y="0">e</tspan><tspan class="ls-0" x="77.48" y="0">ri</tspan><tspan class="ls-0" x="101.08" y="0">e</tspan><tspan class="ls-0" x="119.24" y="0">s </tspan><tspan class="ls-0" x="143.07" y="0">4</tspan><tspan class="ls-n02" x="164.59" y="0">-</tspan><tspan class="ls-0" x="174.96" y="0">7</tspan></text>
+</svg>

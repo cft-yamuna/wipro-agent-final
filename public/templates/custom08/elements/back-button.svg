@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="122.47 1839.1 110.18 79.39">
+  <defs>
+    <style>
+      .cls-17 {
+        fill: none;
+        stroke: #3a3a3a;
+        stroke-miterlimit: 10;
+        stroke-width: 1.65px;
+      }
+      .cls-153 {
+        fill: #3a3a3a;
+      }
+    </style>
+  </defs>
+  <g>
+    <rect class="cls-17" x="126.47" y="1843.1" width="102.18" height="71.39" rx="26.41" ry="26.41"/>
+    <polygon class="cls-153" points="154.7 1878.79 187.81 1897.91 187.81 1859.68 154.7 1878.79"/>
+  </g>
+</svg>

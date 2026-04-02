@@ -1,0 +1,11 @@
+# ── Device-specific files (generated per installation, NEVER commit) ──
+.lightman-identity.json
+
+# ── Build output ──
+dist/
+
+node_modules/
+.npm-cache/
+
+# ── Logs ──
+*.log

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(powershell -Command \"Get-LocalUser | Where-Object {$_Enabled -eq $true} | Select-Object Name, SID, PrincipalSource, Enabled | Format-Table -AutoSize\")",
+      "Bash(powershell -Command \"Get-ItemProperty ''HKLM:\\\\SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\PasswordLess\\\\Device'' -ErrorAction SilentlyContinue | Select-Object DevicePasswordLessBuildVersion\")",
+      "Bash(powershell -Command \"Get-ItemProperty ''HKLM:\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\PassportForWork'' -ErrorAction SilentlyContinue; Get-ItemProperty ''HKLM:\\\\SOFTWARE\\\\Policies\\\\Microsoft\\\\Windows\\\\Personalization'' -ErrorAction SilentlyContinue | Select-Object NoLockScreen; Get-ItemProperty ''HKLM:\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Policies\\\\System'' -ErrorAction SilentlyContinue | Select-Object DisableLockWorkstation\")",
+      "Bash(powershell -Command \"Get-LocalUser | Format-Table Name, Enabled, PrincipalSource -AutoSize\")",
+      "Bash(powershell -Command \"Get-WmiObject Win32_UserProfile | Where-Object { -not [string]::IsNullOrEmpty\\($_LocalPath\\) } | Select-Object LocalPath, SID, Loaded | Format-Table -AutoSize\")"
+    ]
+  }
+}

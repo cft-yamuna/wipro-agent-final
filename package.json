@@ -1,0 +1,52 @@
+{
+  "name": "lightman-agent",
+  "version": "1.0.5",
+  "description": "LIGHTMAN Agent - System-level daemon for museum display machines",
+  "private": false,
+  "type": "module",
+  "bin": {
+    "cms-agent": "bin/cms-agent.js",
+    "lightman-agent": "bin/cms-agent.js"
+  },
+  "files": [
+    "bin/",
+    "nssm/",
+    "public/",
+    "scripts/",
+    "src/index.ts",
+    "src/commands/",
+    "src/lib/",
+    "src/services/",
+    "agent.config.template.json",
+    "package-lock.json",
+    "tsconfig.json"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "cms-agent": "node ./bin/cms-agent.js",
+    "sync-display": "node ./scripts/sync-display.mjs",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "systeminformation": "^5.23.0",
+    "ws": "^8.18.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^3.1.1"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

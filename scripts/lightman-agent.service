@@ -1,0 +1,38 @@
+[Unit]
+Description=LIGHTMAN Agent - Museum Display Management
+Documentation=https://github.com/sagrkv/lightman-app01
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=lightman
+Group=lightman
+WorkingDirectory=/opt/lightman/agent
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=10
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+# Environment
+Environment=NODE_ENV=production
+EnvironmentFile=-/opt/lightman/agent/.env
+
+# Security hardening
+ProtectSystem=strict
+ReadWritePaths=/opt/lightman/agent /var/log/lightman /tmp
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lightman-agent
+
+[Install]
+WantedBy=multi-user.target

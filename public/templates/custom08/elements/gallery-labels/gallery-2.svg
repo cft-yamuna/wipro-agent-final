@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 20">
+  <defs>
+    <style>
+      .cls-3 {
+        fill: #634329;
+      }
+      .cls-3, .cls-4, .cls-5, .cls-6, .cls-7, .cls-8, .cls-9, .cls-10, .cls-11, .cls-12 {
+        font-family: CabinetGroteskVariable-Bold, 'Cabinet Grotesk Variable';
+        font-variation-settings: 'wght' 700;
+        font-weight: 700;
+      }
+      .cls-3, .cls-6 {
+        font-size: 11.86px;
+      }
+      .cls-57 {
+        letter-spacing: -.02em;
+      }
+      .cls-88 {
+        letter-spacing: -.03em;
+      }
+      .cls-71 {
+        letter-spacing: -.03em;
+      }
+      .cls-95 {
+        letter-spacing: -.02em;
+      }
+      .cls-19 {
+        letter-spacing: -.06em;
+      }
+    </style>
+  </defs>
+  <text class="cls-3" transform="rotate(15.37)"><tspan class="cls-57" x="0" y="0">G</tspan><tspan class="cls-88" x="8.17" y="0">A</tspan><tspan class="cls-71" x="15.73" y="0">LL</tspan><tspan class="cls-95" x="27.9" y="0">E</tspan><tspan class="cls-19" x="34.55" y="0">R</tspan><tspan x="41.53" y="0">Y 2</tspan></text>
+</svg>

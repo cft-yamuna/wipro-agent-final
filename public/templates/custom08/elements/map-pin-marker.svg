@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="1355 1320 120 78">
+  <defs>
+    <style>
+      .pin-body { fill: #6b1313; }
+      .pin-dot { fill: #fffdfd; }
+      .pin-shadow { fill: #fff; }
+    </style>
+  </defs>
+  <ellipse class="pin-shadow" cx="1415.38" cy="1380.12" rx="57.02" ry="14.95"/>
+  <g>
+    <path class="pin-body" d="M1439,1346.57c0,13.49-23.75,33.55-23.75,33.55,0,0-25.09-20.06-25.09-33.55,0-13.49,10.93-24.42,24.42-24.42,13.49,0,24.42,10.93,24.42,24.42Z"/>
+    <circle class="pin-dot" cx="1414.58" cy="1344.56" r="15.26"/>
+  </g>
+</svg>

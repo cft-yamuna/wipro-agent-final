@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80">
+  <defs>
+    <style>
+      .marker-circle { fill: #773030; }
+      .marker-star { fill: #fffdfd; }
+    </style>
+  </defs>
+  <circle class="marker-circle" cx="40" cy="40" r="38"/>
+  <polygon class="marker-star" points="40 12.75 47.1 30.7 66.08 31.95 51.56 44.37 56.33 63.16 39.85 52.83 23.47 63.16 28.18 44.34 13.72 31.95 32.7 30.7 40 12.75"/>
+</svg>

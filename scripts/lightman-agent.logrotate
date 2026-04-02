@@ -1,0 +1,12 @@
+/var/log/lightman/*.log {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0640 lightman lightman
+    postrotate
+        systemctl reload lightman-agent > /dev/null 2>&1 || true
+    endscript
+}

@@ -1,0 +1,22 @@
+{
+  "serverUrl": "http://localhost:3401",
+  "deviceSlug": "a-av03",
+  "healthIntervalMs": 60000,
+  "logLevel": "debug",
+  "logFile": "agent.log",
+  "identityFile": ".lightman-identity.json",
+  "kiosk": {
+    "browserPath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "defaultUrl": "http://localhost:3403/display/a-av03",
+    "extraArgs": ["--start-fullscreen", "--disable-translate", "--disable-extensions", "--user-data-dir=C:\\ProgramData\\Lightman\\chrome-kiosk"],
+    "pollIntervalMs": 10000,
+    "maxCrashesInWindow": 10,
+    "crashWindowMs": 300000
+  },
+  "powerSchedule": {
+    "shutdownCron": "0 19 * * *",
+    "startupCron": "0 8 * * *",
+    "timezone": "Asia/Kolkata",
+    "shutdownWarningSeconds": 60
+  }
+}
