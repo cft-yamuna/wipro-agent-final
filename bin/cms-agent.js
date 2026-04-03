@@ -8,7 +8,7 @@ import { spawnSync } from 'child_process';
 import { createInterface } from 'readline/promises';
 import { stdin as input, stdout as output, cwd, platform, exit } from 'process';
 
-const DEFAULT_SERVER = 'http://192.168.1.100:3401';
+const DEFAULT_SERVER = 'http://192.168.10.100:3401';
 const INSTALL_CONFIG_PATH = 'C:\\Program Files\\Lightman\\Agent\\agent.config.json';
 
 function printUsage() {
@@ -16,13 +16,13 @@ function printUsage() {
 cms-agent <command> [options]
 
 Commands:
-  install             Prompt slug, install agent with ShellReplace, reboot
+  install             Prompt slug and server IP, install agent with ShellReplace, reboot
   setup               Alias of install
   update              Reinstall/update using installed config, reboot
 
 Options:
   --slug <value>      Device slug (example: C-AV01)
-  --server <url>      Server URL (example: http://192.168.1.100:3401)
+  --server <url>      Server URL or IP (example: 192.168.10.100 or http://192.168.10.100:3401)
   --timezone <tz>     Timezone override (default: Asia/Kolkata)
   --pair-timeout <s>  Wait time for pairing in seconds (default: 900, 0 = no timeout)
   --no-restart        Skip reboot after successful install/update
@@ -79,6 +79,33 @@ function isValidSlug(slug) {
   return /^[A-Za-z0-9][A-Za-z0-9-]{0,62}$/.test(slug);
 }
 
+function normalizeServer(server) {
+  const value = (server || '').trim();
+  if (!value) {
+    return '';
+  }
+
+  const hasProtocol = /^[a-z]+:\/\//i.test(value);
+  const candidate = hasProtocol ? value : `http://${value}`;
+
+  let parsed;
+  try {
+    parsed = new URL(candidate);
+  } catch {
+    throw new Error('Invalid server IP/URL. Use an IP like 192.168.10.100 or a URL like http://192.168.10.100:3401.');
+  }
+
+  if (!parsed.port) {
+    parsed.port = '3401';
+  }
+
+  if (parsed.pathname === '/') {
+    parsed.pathname = '';
+  }
+
+  return parsed.toString().replace(/\/$/, '');
+}
+
 function collectMacAddresses() {
   const nets = networkInterfaces();
   const macs = new Set();
@@ -129,6 +156,27 @@ async function promptSlug(defaultSlug) {
   }
 }
 
+async function promptServer(defaultServer) {
+  const rl = createInterface({ input, output });
+  try {
+    while (true) {
+      const prompt = defaultServer
+        ? `Enter server IP or URL [${defaultServer}]: `
+        : 'Enter server IP or URL (example 192.168.10.100 or http://192.168.10.100:3401): ';
+      const answer = (await rl.question(prompt)).trim();
+      const server = answer || defaultServer || '';
+
+      try {
+        return normalizeServer(server);
+      } catch (error) {
+        console.error(error instanceof Error ? error.message : String(error));
+      }
+    }
+  } finally {
+    rl.close();
+  }
+}
+
 function resolveInstallScript() {
   const here = dirname(fileURLToPath(import.meta.url));
   const packaged = resolve(here, '../scripts/install-windows.ps1');
@@ -166,7 +214,7 @@ async function runInstall(opts) {
   const localConfig = safeReadJson(resolve(cwd(), 'agent.config.json')) || {};
   const installedConfig = safeReadJson(INSTALL_CONFIG_PATH) || {};
   const defaultSlug = opts.slug || localConfig.deviceSlug || installedConfig.deviceSlug || '';
-  const server = opts.server || DEFAULT_SERVER;
+  const defaultServer = localConfig.serverUrl || installedConfig.serverUrl || DEFAULT_SERVER;
   const timezone = opts.timezone || localConfig?.powerSchedule?.timezone || installedConfig?.powerSchedule?.timezone || 'Asia/Kolkata';
   const pairingTimeoutSeconds = Number.isFinite(Number(opts.pairTimeout)) ? Number.parseInt(String(opts.pairTimeout), 10) : 900;
   const noRestart = Boolean(opts.noRestart);
@@ -183,6 +231,7 @@ async function runInstall(opts) {
   console.log('');
 
   const slug = opts.slug || await promptSlug(defaultSlug);
+  const server = opts.server ? normalizeServer(opts.server) : await promptServer(defaultServer);
   const scriptPath = resolveInstallScript();
 
   console.log(`Installing with slug=${slug}, server=${server}, shellReplace=true`);
@@ -199,7 +248,7 @@ async function runUpdate(opts) {
 
   const installedConfig = safeReadJson(INSTALL_CONFIG_PATH) || {};
   const slug = opts.slug || installedConfig.deviceSlug;
-  const server = opts.server || DEFAULT_SERVER;
+  const server = normalizeServer(opts.server || installedConfig.serverUrl || DEFAULT_SERVER);
   const timezone = opts.timezone || installedConfig?.powerSchedule?.timezone || 'Asia/Kolkata';
   const pairingTimeoutSeconds = Number.isFinite(Number(opts.pairTimeout)) ? Number.parseInt(String(opts.pairTimeout), 10) : 900;
   const noRestart = Boolean(opts.noRestart);

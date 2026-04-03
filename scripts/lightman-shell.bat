@@ -84,8 +84,12 @@ if "%BROWSER%"=="" (
         set "BROWSER=C:\Program Files\Google\Chrome\Application\chrome.exe"
     ) else if exist "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" (
         set "BROWSER=C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+    ) else if exist "C:\Program Files\Microsoft\Edge\Application\msedge.exe" (
+        set "BROWSER=C:\Program Files\Microsoft\Edge\Application\msedge.exe"
+    ) else if exist "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" (
+        set "BROWSER=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
     ) else (
-        echo [%date% %time%] ERROR: Chrome not found! >> "%LOG_FILE%"
+        echo [%date% %time%] ERROR: No supported kiosk browser found! >> "%LOG_FILE%"
         start explorer.exe
         exit /b 1
     )
@@ -135,11 +139,11 @@ REM ----------------------------------------------------------------
         )
     )
 
-    echo [%date% %time%] Launching Chrome: %URL% >> "%LOG_FILE%"
+    echo [%date% %time%] Launching browser: %URL% >> "%LOG_FILE%"
 
     start /wait "" "%BROWSER%" --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --no-first-run --no-default-browser-check --start-fullscreen --disable-translate --disable-extensions --autoplay-policy=no-user-gesture-required --disable-features=TranslateUI --user-data-dir="%CHROME_DATA%" "%URL%"
 
-    echo [%date% %time%] Chrome exited (code: %errorlevel%). Restarting in 3s... >> "%LOG_FILE%"
+    echo [%date% %time%] Browser exited (code: %errorlevel%). Restarting in 3s... >> "%LOG_FILE%"
     timeout /t 3 /nobreak >nul
 
 goto loop

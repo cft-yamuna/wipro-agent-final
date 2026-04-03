@@ -3,8 +3,8 @@
 # Generates agent.config.json for this specific device.
 #
 # Usage:
-#   sudo bash setup.sh --slug f-av01 --server http://192.168.1.100:3401
-#   sudo bash setup.sh --slug f-av01 --server http://192.168.1.100:3401 --timezone Asia/Kolkata --dir /opt/lightman/agent
+#   sudo bash setup.sh --slug f-av01 --server http://192.168.10.100:3401
+#   sudo bash setup.sh --slug f-av01 --server http://192.168.10.100:3401 --timezone Asia/Kolkata --dir /opt/lightman/agent
 #
 # This script MUST be run once on every new device installation.
 # It clears any cached identity so the device provisions fresh.
@@ -37,13 +37,13 @@ done
 
 if [[ -z "$SLUG" ]]; then
     echo "Error: --slug is required"
-    echo "Usage: bash setup.sh --slug f-av01 --server http://192.168.1.100:3401"
+    echo "Usage: bash setup.sh --slug f-av01 --server http://192.168.10.100:3401"
     exit 1
 fi
 
 if [[ -z "$SERVER" ]]; then
     echo "Error: --server is required"
-    echo "Usage: bash setup.sh --slug f-av01 --server http://192.168.1.100:3401"
+    echo "Usage: bash setup.sh --slug f-av01 --server http://192.168.10.100:3401"
     exit 1
 fi
 

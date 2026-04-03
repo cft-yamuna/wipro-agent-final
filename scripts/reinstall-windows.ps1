@@ -3,7 +3,7 @@
 .SYNOPSIS
     LIGHTMAN Agent - Reinstall (install-windows.ps1 handles cleanup automatically)
 .EXAMPLE
-    powershell -ExecutionPolicy Bypass -File scripts\reinstall-windows.ps1 -Slug "F-AV04" -Server "http://192.168.1.180:3401" -ShellReplace
+    powershell -ExecutionPolicy Bypass -File scripts\reinstall-windows.ps1 -Slug "F-AV04" -Server "http://192.168.10.100:3401" -ShellReplace
 #>
 param(
     [Parameter(Mandatory=$true)] [string]$Slug,

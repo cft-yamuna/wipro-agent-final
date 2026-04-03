@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { loadConfig } from './lib/config.js';
+import { getDefaultKioskBrowserPath, loadConfig } from './lib/config.js';
 import { Logger } from './lib/logger.js';
 import { provision } from './services/provisioning.js';
 import { WsClient } from './services/websocket.js';
@@ -135,7 +135,7 @@ async function main(): Promise<void> {
 
   // Create KioskManager if kiosk config is present
   const baseKioskConfig: KioskConfig = config.kiosk || {
-    browserPath: 'chromium-browser',
+    browserPath: getDefaultKioskBrowserPath(),
     defaultUrl: `${config.serverUrl.replace(/:\d+$/, ':3401')}/display`,
     extraArgs: [],
     pollIntervalMs: 10_000,

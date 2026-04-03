@@ -1,6 +1,6 @@
 import { spawn, execSync } from 'child_process';
 import { writeFileSync, readFileSync, existsSync } from 'fs';
-import { resolve } from 'path';
+import { basename } from 'path';
 import type { ChildProcess } from 'child_process';
 import type { KioskConfig, KioskStatus } from '../lib/types.js';
 import type { Logger } from '../lib/logger.js';
@@ -57,7 +57,7 @@ export class KioskManager {
   async kill(): Promise<void> {
     if (this.shellMode) {
       // In shell mode, we just kill Chrome — the shell BAT will relaunch it
-      this.killAllChrome();
+      this.killAllBrowser();
       return;
     }
 
@@ -110,7 +110,7 @@ export class KioskManager {
       // Write new URL → kill Chrome → shell relaunches with new URL
       this.writeUrlSidecar(url);
       this.currentUrl = url;
-      this.killAllChrome();
+      this.killAllBrowser();
       return;
     }
 
@@ -123,7 +123,7 @@ export class KioskManager {
 
     if (this.shellMode) {
       // Just kill Chrome — shell relaunches it with same URL from sidecar
-      this.killAllChrome();
+      this.killAllBrowser();
       // Give shell time to relaunch
       await new Promise((r) => setTimeout(r, 5_000));
       return this.getStatus();
@@ -176,11 +176,11 @@ export class KioskManager {
 
     // Shell mode: Chrome is managed by lightman-shell.bat.
     // Shell prefers sidecar URL (if present), then falls back to slug in config.
-    if (this.isChromeRunning()) {
-      this.logger.info('Shell mode: Chrome already running. Restarting once to apply sidecar URL.');
-      this.killAllChrome();
+    if (this.isBrowserRunning()) {
+      this.logger.info('Shell mode: browser already running. Restarting once to apply sidecar URL.');
+      this.killAllBrowser();
     } else {
-      this.logger.info('Shell mode: Chrome not running. Shell BAT will launch it.');
+      this.logger.info('Shell mode: browser not running. Shell BAT will launch it.');
     }
 
     this.startedAt = this.startedAt || Date.now();
@@ -188,10 +188,10 @@ export class KioskManager {
   }
 
   private getShellModeStatus(): KioskStatus {
-    const running = this.isChromeRunning();
+    const running = this.isBrowserRunning();
     return {
       running,
-      pid: running ? this.getChromePid() : null,
+      pid: running ? this.getBrowserPid() : null,
       url: this.currentUrl || this.readUrlSidecar(),
       crashCount: 0, // Shell handles crash recovery, not us
       crashLoopDetected: false,
@@ -220,16 +220,17 @@ export class KioskManager {
     return null;
   }
 
-  /** Check if any chrome.exe process is running */
-  private isChromeRunning(): boolean {
+  /** Check if the configured kiosk browser process is running */
+  private isBrowserRunning(): boolean {
     try {
       if (process.platform === 'win32') {
-        const result = execSync('tasklist /FI "IMAGENAME eq chrome.exe" /NH', {
+        const browserExe = this.getWindowsBrowserExecutableName();
+        const result = execSync(`tasklist /FI "IMAGENAME eq ${browserExe}" /NH`, {
           encoding: 'utf-8',
           timeout: 5_000,
           stdio: ['pipe', 'pipe', 'ignore'],
         });
-        return result.toLowerCase().includes('chrome.exe');
+        return result.toLowerCase().includes(browserExe.toLowerCase());
       } else {
         execSync('pgrep -x chrome || pgrep -x chromium-browser', {
           stdio: 'ignore',
@@ -242,12 +243,13 @@ export class KioskManager {
     }
   }
 
-  /** Get PID of main Chrome process */
-  private getChromePid(): number | null {
+  /** Get PID of main kiosk browser process */
+  private getBrowserPid(): number | null {
     try {
       if (process.platform === 'win32') {
+        const browserExe = this.getWindowsBrowserExecutableName();
         const result = execSync(
-          'wmic process where "name=\'chrome.exe\' and CommandLine like \'%--kiosk%\'" get ProcessId /format:value',
+          `wmic process where "name='${browserExe}' and CommandLine like '%--kiosk%'" get ProcessId /format:value`,
           { encoding: 'utf-8', timeout: 5_000, stdio: ['pipe', 'pipe', 'ignore'] }
         );
         const match = result.match(/ProcessId=(\d+)/);
@@ -257,6 +259,20 @@ export class KioskManager {
       // Best effort
     }
     return null;
+  }
+
+  private getWindowsBrowserExecutableName(): string {
+    const browserPath = this.config.browserPath?.trim();
+    if (!browserPath) {
+      return 'chrome.exe';
+    }
+
+    const fileName = basename(browserPath).trim().toLowerCase();
+    if (!fileName) {
+      return 'chrome.exe';
+    }
+
+    return fileName.endsWith('.exe') ? fileName : `${fileName}.exe`;
   }
 
   // =====================================================================
@@ -270,7 +286,7 @@ export class KioskManager {
     }
 
     // Kill any leftover Chrome kiosk instances
-    this.killAllChrome();
+    this.killAllBrowser();
 
     // Delay to let Chrome fully release profile lock
     await new Promise((r) => setTimeout(r, 2_000));
@@ -315,14 +331,15 @@ export class KioskManager {
     return this.getStatus();
   }
 
-  private killAllChrome(): void {
+  private killAllBrowser(): void {
     try {
       if (process.platform === 'win32') {
+        const browserExe = this.getWindowsBrowserExecutableName();
         try {
-          execSync('taskkill /IM chrome.exe /F', { stdio: 'ignore', timeout: 5_000 });
-          this.logger.info('Killed Chrome instances');
+          execSync(`taskkill /IM ${browserExe} /F`, { stdio: 'ignore', timeout: 5_000 });
+          this.logger.info(`Killed kiosk browser instances (${browserExe})`);
         } catch {
-          // No Chrome running, that's fine
+          // No browser running, that's fine
         }
       } else {
         try {

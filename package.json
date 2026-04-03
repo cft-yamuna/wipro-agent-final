@@ -1,6 +1,6 @@
 {
   "name": "lightman-agent",
-  "version": "1.0.6",
+  "version": "1.0.12",
   "description": "LIGHTMAN Agent - System-level daemon for museum display machines",
   "private": false,
   "type": "module",
@@ -17,6 +17,7 @@
     "src/commands/",
     "src/lib/",
     "src/services/",
+    "agent.config.json",
     "agent.config.template.json",
     "package-lock.json",
     "tsconfig.json"

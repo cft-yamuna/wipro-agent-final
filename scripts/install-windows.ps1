@@ -3,10 +3,10 @@
 # Cleans up any previous installation automatically before installing.
 #
 # Run as Administrator:
-#   powershell -ExecutionPolicy Bypass -File install-windows.ps1 -Slug "F-AV01" -Server "http://192.168.1.180:3401"
+#   powershell -ExecutionPolicy Bypass -File install-windows.ps1 -Slug "F-AV01" -Server "http://192.168.10.100:3401"
 #
 # Shell Replacement mode (RECOMMENDED for kiosk machines):
-#   powershell -ExecutionPolicy Bypass -File install-windows.ps1 -Slug "F-AV01" -Server "http://..." -ShellReplace
+#   powershell -ExecutionPolicy Bypass -File install-windows.ps1 -Slug "F-AV01" -Server "http://192.168.10.100:3401" -ShellReplace
 #Requires -RunAsAdministrator
 
 param(
@@ -33,6 +33,80 @@ $ScriptDir     = Split-Path -Parent $MyInvocation.MyCommand.Path
 $AgentDir      = Split-Path -Parent $ScriptDir
 
 if (-not $Username) { $Username = $env:USERNAME }
+
+function Get-ChromePath {
+    $candidates = @(
+        "C:\Program Files\Google\Chrome\Application\chrome.exe",
+        "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        (Join-Path $env:LOCALAPPDATA "Google\Chrome\Application\chrome.exe")
+    )
+
+    foreach ($candidate in $candidates) {
+        if ($candidate -and (Test-Path $candidate)) {
+            return $candidate
+        }
+    }
+
+    return $null
+}
+
+function Install-ChromeFromMsi {
+    $is64Bit = [Environment]::Is64BitOperatingSystem
+    $downloadUrl = if ($is64Bit) {
+        "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"
+    } else {
+        "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise.msi"
+    }
+    $installerName = if ($is64Bit) { "googlechromestandaloneenterprise64.msi" } else { "googlechromestandaloneenterprise.msi" }
+    $installerPath = Join-Path $env:TEMP $installerName
+
+    Write-Host "  Chrome not found. Downloading official Google Chrome MSI..." -ForegroundColor Yellow
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath -UseBasicParsing -TimeoutSec 180
+
+    if (-not (Test-Path $installerPath)) {
+        throw "Chrome MSI was not downloaded."
+    }
+
+    $msiArgs = "/i `"$installerPath`" /qn /norestart"
+    Start-Process msiexec.exe -ArgumentList $msiArgs -Wait -NoNewWindow
+    Remove-Item $installerPath -Force -ErrorAction SilentlyContinue
+}
+
+function Install-ChromeFromWinget {
+    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+        throw "winget is not available."
+    }
+
+    Write-Host "  MSI install failed. Trying winget for Google Chrome..." -ForegroundColor Yellow
+    & winget install --id Google.Chrome --exact --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Host
+    if ($LASTEXITCODE -ne 0) {
+        throw "winget install failed with exit code $LASTEXITCODE."
+    }
+}
+
+function Ensure-ChromeInstalled {
+    $existingChrome = Get-ChromePath
+    if ($existingChrome) {
+        Write-Host "  Found Chrome: $existingChrome" -ForegroundColor Green
+        return $existingChrome
+    }
+
+    try {
+        Install-ChromeFromMsi
+    } catch {
+        Write-Host "  Chrome MSI install failed: $($_.Exception.Message)" -ForegroundColor DarkYellow
+        Install-ChromeFromWinget
+    }
+
+    $installedChrome = Get-ChromePath
+    if (-not $installedChrome) {
+        throw "Chrome install did not produce chrome.exe."
+    }
+
+    Write-Host "  Chrome installed: $installedChrome" -ForegroundColor Green
+    return $installedChrome
+}
 
 Write-Host ""
 Write-Host "=============================================" -ForegroundColor Cyan
@@ -70,7 +144,7 @@ foreach ($tn in @($AgentTask, $KioskTask, $GuardianTask)) {
 }
 
 # Kill processes
-Write-Host "[0c] Killing node.exe and Chrome..." -ForegroundColor Yellow
+Write-Host "[0c] Killing node.exe and kiosk browser..." -ForegroundColor Yellow
 # IMPORTANT:
 # If install-windows.ps1 is launched from the npm CLI wrapper (node.exe),
 # killing all node.exe would terminate the installer mid-run.
@@ -86,6 +160,7 @@ Get-Process -Name "node" -ErrorAction SilentlyContinue | ForEach-Object {
     }
 }
 Get-Process -Name "chrome" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+Get-Process -Name "msedge" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
 
 # Remove old files (keep NSSM and logs)
@@ -154,6 +229,16 @@ $ErrorActionPreference = "Continue"
 if ($LASTEXITCODE -ne 0) { & npm install --omit=dev --ignore-scripts 2>&1 | Out-Host }
 $ErrorActionPreference = "Stop"
 Pop-Location
+
+# --- 5b. Chrome ---
+Write-Host "[5b/19] Ensuring Google Chrome is installed..." -ForegroundColor Yellow
+try {
+    $chromePath = Ensure-ChromeInstalled
+} catch {
+    Write-Host "  FATAL: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "  Install Google Chrome manually, then re-run the installer." -ForegroundColor Yellow
+    exit 1
+}
 
 # --- 6. Generate config ---
 Write-Host "[6/19] Generating config..." -ForegroundColor Yellow
@@ -551,7 +636,7 @@ $svcStatus = if ($finalSvc) { "$($finalSvc.Status)" } else { "NOT FOUND" }
 $cfgOk = $false
 try {
     Push-Location $InstallDir
-    $cfgResult = & node -e "const c=JSON.parse(require('fs').readFileSync('agent.config.json','utf8'));console.log(JSON.stringify({slug:c.deviceSlug,shell:c.kiosk&&c.kiosk.shellMode||false}))" 2>&1
+    $cfgResult = & node -e "const c=JSON.parse(require('fs').readFileSync('agent.config.json','utf8'));console.log(JSON.stringify({slug:c.deviceSlug,shell:c.kiosk&&c.kiosk.shellMode||false,browser:c.kiosk&&c.kiosk.browserPath||''}))" 2>&1
     $cfgData = $cfgResult | ConvertFrom-Json
     Pop-Location
     $cfgOk = $true
@@ -572,6 +657,7 @@ Write-Host "  Service    : $svcStatus" -ForegroundColor $(if ($svcStatus -eq 'Ru
 if ($cfgOk) {
     Write-Host "  Config slug: $($cfgData.slug)" -ForegroundColor $(if ($cfgData.slug -eq $Slug) { 'Green' } else { 'Red' })
     Write-Host "  Shell mode : $($cfgData.shell)" -ForegroundColor $(if ($cfgData.shell -eq $ShellReplace.IsPresent) { 'Green' } else { 'Red' })
+    Write-Host "  Browser    : $($cfgData.browser)" -ForegroundColor Green
 }
 Write-Host ""
 Write-Host "  Manage:" -ForegroundColor DarkGray
