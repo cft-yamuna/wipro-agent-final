@@ -26,11 +26,6 @@ objFile.Close
 
 browserPath = ExtractJsonValue(jsonText, "browserPath")
 defaultUrl = ExtractJsonValue(jsonText, "defaultUrl")
-browserExeName = LCase(ExtractFileName(browserPath))
-
-If browserExeName = "" Then
-    browserExeName = "chrome.exe"
-End If
 
 If browserPath = "" Or defaultUrl = "" Then
     WScript.Quit 1
@@ -40,11 +35,11 @@ End If
 ' Try to ping the server (extract hostname from URL)
 waitedMs = 0
 Do While waitedMs < (maxWaitSeconds * 1000)
-    ' Check if the browser is already running (agent's KioskManager may have launched it)
+    ' Check if Chrome is already running (agent's KioskManager may have launched it)
     Set objWMI = GetObject("winmgmts:\\.\root\cimv2")
-    Set colProcesses = objWMI.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE Name = '" & browserExeName & "'")
+    Set colProcesses = objWMI.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE Name = 'chrome.exe'")
     If colProcesses.Count > 0 Then
-        ' Browser already running - agent is handling it. Exit gracefully.
+        ' Chrome already running - agent is handling it. Exit gracefully.
         WScript.Quit 0
     End If
 
@@ -61,14 +56,14 @@ Do While waitedMs < (maxWaitSeconds * 1000)
         ' Service is running - give it a few more seconds to launch Chrome itself
         WScript.Sleep 15000
 
-        ' Re-check if the browser appeared (agent launched it)
-        Set colProcesses2 = objWMI.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE Name = '" & browserExeName & "'")
+        ' Re-check if Chrome appeared (agent launched it)
+        Set colProcesses2 = objWMI.ExecQuery("SELECT ProcessId FROM Win32_Process WHERE Name = 'chrome.exe'")
         If colProcesses2.Count > 0 Then
-            ' Agent launched the browser successfully. Exit.
+            ' Agent launched Chrome successfully. Exit.
             WScript.Quit 0
         End If
 
-        ' Agent is running but hasn't launched the browser yet - we'll do it
+        ' Agent is running but hasn't launched Chrome yet - we'll do it
         Exit Do
     End If
 
@@ -103,15 +98,4 @@ Function ExtractJsonValue(json, key)
     endPos = InStr(pos, json, """")
     If endPos = 0 Then Exit Function
     ExtractJsonValue = Mid(json, pos, endPos - pos)
-End Function
-
-Function ExtractFileName(path)
-    ExtractFileName = ""
-    If path = "" Then Exit Function
-    On Error Resume Next
-    ExtractFileName = objFSO.GetFileName(path)
-    If ExtractFileName = "" Then
-        ExtractFileName = path
-    End If
-    On Error GoTo 0
 End Function

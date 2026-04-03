@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # LIGHTMAN Agent — Linux Installer
 # Run as root:
-#   sudo bash install-linux.sh --slug f-av01 --server http://192.168.10.100:3401
+#   sudo bash install-linux.sh --slug f-av01 --server http://192.168.1.100:3401
 set -euo pipefail
 
 INSTALL_DIR="/opt/lightman/agent"
@@ -22,7 +22,7 @@ while [[ $# -gt 0 ]]; do
         --server)   SERVER="$2";   shift 2 ;;
         --timezone) TIMEZONE="$2"; shift 2 ;;
         -h|--help)
-            echo "Usage: sudo bash install-linux.sh --slug f-av01 --server http://192.168.10.100:3401 [--timezone Asia/Kolkata]"
+            echo "Usage: sudo bash install-linux.sh --slug f-av01 --server http://192.168.1.100:3401 [--timezone Asia/Kolkata]"
             exit 0
             ;;
         *) echo "Unknown option: $1"; exit 1 ;;
@@ -32,13 +32,13 @@ done
 # ── Validate required args ──
 if [[ -z "$SLUG" ]]; then
     echo "Error: --slug is required"
-    echo "Usage: sudo bash install-linux.sh --slug f-av01 --server http://192.168.10.100:3401"
+    echo "Usage: sudo bash install-linux.sh --slug f-av01 --server http://192.168.1.100:3401"
     exit 1
 fi
 
 if [[ -z "$SERVER" ]]; then
     echo "Error: --server is required"
-    echo "Usage: sudo bash install-linux.sh --slug f-av01 --server http://192.168.10.100:3401"
+    echo "Usage: sudo bash install-linux.sh --slug f-av01 --server http://192.168.1.100:3401"
     exit 1
 fi
 

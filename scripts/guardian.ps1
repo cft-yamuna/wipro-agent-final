@@ -6,7 +6,6 @@ $LogDir = "C:\ProgramData\Lightman\logs"
 $LogFile = Join-Path $LogDir "guardian.log"
 $ServiceName = "LightmanAgent"
 $NssmExe = "C:\ProgramData\Lightman\nssm\nssm.exe"
-$ConfigPath = "C:\Program Files\Lightman\Agent\agent.config.json"
 
 function Write-GuardianLog($msg) {
     $ts = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
@@ -19,23 +18,6 @@ function Write-GuardianLog($msg) {
             Rename-Item $LogFile $rotated -Force
         }
     } catch { }
-}
-
-function Get-BrowserProcessName {
-    try {
-        if (Test-Path $ConfigPath) {
-            $config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
-            $browserPath = $config.kiosk.browserPath
-            if ($browserPath) {
-                $browserLeaf = Split-Path $browserPath -Leaf
-                if ($browserLeaf) {
-                    return [System.IO.Path]::GetFileNameWithoutExtension($browserLeaf)
-                }
-            }
-        }
-    } catch { }
-
-    return "chrome"
 }
 
 try {
@@ -75,16 +57,15 @@ try {
         }
     }
 
-    # 2. Check kiosk browser
-    $browserProcess = Get-BrowserProcessName
-    $browser = Get-Process -Name $browserProcess -ErrorAction SilentlyContinue
-    if (-not $browser) {
+    # 2. Check Chrome kiosk
+    $chrome = Get-Process -Name "chrome" -ErrorAction SilentlyContinue
+    if (-not $chrome) {
         $vbsPath = "C:\Program Files\Lightman\Agent\launch-kiosk.vbs"
         if (Test-Path $vbsPath) {
             Start-Sleep -Seconds 10
-            $browserRecheck = Get-Process -Name $browserProcess -ErrorAction SilentlyContinue
-            if (-not $browserRecheck) {
-                Write-GuardianLog "Browser '$browserProcess' not running. Launching via VBS..."
+            $chromeRecheck = Get-Process -Name "chrome" -ErrorAction SilentlyContinue
+            if (-not $chromeRecheck) {
+                Write-GuardianLog "Chrome not running. Launching via VBS..."
                 Start-Process "wscript.exe" -ArgumentList """$vbsPath""" -WindowStyle Hidden
             }
         }

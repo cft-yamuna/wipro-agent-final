@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { getDefaultKioskBrowserPath, loadConfig } from './lib/config.js';
+import { loadConfig } from './lib/config.js';
 import { Logger } from './lib/logger.js';
 import { provision } from './services/provisioning.js';
 import { WsClient } from './services/websocket.js';
@@ -16,6 +16,7 @@ import { registerDisplayCommands } from './commands/display.js';
 import { registerNetworkCommands } from './commands/network.js';
 import { Updater } from './services/updater.js';
 import { registerUpdateCommands } from './commands/update.js';
+import { AutoUpdater } from './services/autoUpdater.js';
 import { Watchdog } from './services/watchdog.js';
 import { registerMaintenanceCommands } from './commands/maintenance.js';
 import { LogForwarder } from './services/logForwarder.js';
@@ -28,6 +29,7 @@ import { PowerScheduler } from './services/powerScheduler.js';
 import { SerialBridge } from './services/serialBridge.js';
 import { OscBridge } from './services/oscBridge.js';
 import { LocalEventServer } from './services/localEvents.js';
+import { PresenceSensor } from './services/presenceSensor.js';
 import type { WsMessage, KioskConfig, PowerScheduleConfig, Identity, ScreenMapping } from './lib/types.js';
 
 function getAgentVersion(): string {
@@ -108,7 +110,7 @@ async function main(): Promise<void> {
     identity,
     logger,
     onMessage: (msg: WsMessage) => {
-      handleServerMessage(msg, commandExecutor, logger, powerScheduler, startSerialBridge, stopSerialBridge, startOscBridge, stopOscBridge, multiScreenKiosk, getIdentity, kioskManager, watchdog);
+      handleServerMessage(msg, commandExecutor, logger, powerScheduler, startSerialBridge, stopSerialBridge, startOscBridge, stopOscBridge, multiScreenKiosk, getIdentity, kioskManager, watchdog, startPresenceSensor, stopPresenceSensor);
     },
   });
 
@@ -135,7 +137,7 @@ async function main(): Promise<void> {
 
   // Create KioskManager if kiosk config is present
   const baseKioskConfig: KioskConfig = config.kiosk || {
-    browserPath: getDefaultKioskBrowserPath(),
+    browserPath: 'chromium-browser',
     defaultUrl: `${config.serverUrl.replace(/:\d+$/, ':3401')}/display`,
     extraArgs: [],
     pollIntervalMs: 10_000,
@@ -187,6 +189,17 @@ async function main(): Promise<void> {
   // Create Updater and register OTA update commands (Phase 20)
   const updater = new Updater(logger);
   registerUpdateCommands(commandExecutor.register.bind(commandExecutor), updater, wsClient, logger);
+
+  // Auto-updater: polls server every 5 minutes for new agent versions
+  const autoUpdater = new AutoUpdater({
+    logger,
+    updater,
+    wsClient,
+    serverUrl: config.serverUrl,
+    identity,
+    currentVersion: getAgentVersion(),
+  });
+  autoUpdater.start();
 
   // Register RPi-specific commands when running on Raspberry Pi
   if (isRaspberryPi()) {
@@ -253,6 +266,50 @@ async function main(): Promise<void> {
   const stopSerialBridge = () => {
     if (serialBridge) { serialBridge.stop(); serialBridge = null; }
   };
+
+  // Presence sensor — auto-detects HLK-LD2410B via USB serial
+  let presenceSensor: PresenceSensor | null = null;
+
+  const startPresenceSensor = (port?: string) => {
+    if (presenceSensor) {
+      logger.info('[Presence] Stopping existing sensor before restart');
+      presenceSensor.stop();
+      presenceSensor = null;
+    }
+    logger.info(`[Presence] Starting sensor (port: ${port || 'auto-detect'})`);
+    presenceSensor = new PresenceSensor({
+      wsClient,
+      logger,
+      port: port || 'auto',
+      onEvent: (event) => localEventServer.broadcast({ type: 'hardware:event', payload: event }),
+      excludePort: serialBridge?.isRunning() ? undefined : undefined,
+    });
+    presenceSensor.start();
+  };
+
+  const stopPresenceSensor = () => {
+    if (presenceSensor) { presenceSensor.stop(); presenceSensor = null; }
+  };
+
+  // Register sensor commands
+  commandExecutor.register('sensor:status', async () => {
+    return presenceSensor?.getState() || { state: 'unknown', connected: false, port: null, running: false };
+  });
+
+  commandExecutor.register('sensor:enable', async (args) => {
+    const port = args?.port as string | undefined;
+    startPresenceSensor(port);
+    return { started: true, port: port || 'auto' };
+  });
+
+  commandExecutor.register('sensor:disable', async () => {
+    if (presenceSensor) {
+      presenceSensor.stop();
+      presenceSensor = null;
+      return { stopped: true };
+    }
+    return { stopped: false, message: 'No sensor running' };
+  });
 
   // Register serial bridge commands
   commandExecutor.register('serial:bridge-start', async (args) => {
@@ -398,6 +455,14 @@ async function main(): Promise<void> {
           logger.info('[OSC] No OSC config on this device — OSC bridge not started');
         }
 
+        // Presence sensor — auto-start if template is presence-enabled (e.g. wipro-timeline)
+        if (deviceCfg && deviceCfg.templateType === 'custom01-wipro-timeline') {
+          logger.info('[Presence] Template is custom01-wipro-timeline — auto-starting presence sensor');
+          startPresenceSensor();
+        } else {
+          logger.info('[Presence] Template is not presence-enabled — sensor not started');
+        }
+
         // Multi-screen: if screenMap exists, use MultiScreenKioskManager — do NOT launch single kiosk
         if (deviceCfg && deviceCfg.screenMap && deviceCfg.screenMap.length > 0) {
           logger.info(`[MultiKiosk] Found screenMap in device config: ${deviceCfg.screenMap.length} mapping(s) — skipping single kiosk`);
@@ -457,8 +522,10 @@ async function main(): Promise<void> {
       }
     }
 
+    autoUpdater.stop();
     logForwarder.stop();
     powerScheduler.stop();
+    if (presenceSensor) presenceSensor.stop();
     if (serialBridge) serialBridge.stop();
     if (oscBridge) oscBridge.stop();
     watchdog.stop();
@@ -499,7 +566,9 @@ function handleServerMessage(
   multiScreenKiosk?: MultiScreenKioskManager,
   getIdentity?: () => Identity,
   kioskManager?: KioskManager,
-  watchdog?: Watchdog
+  watchdog?: Watchdog,
+  startPresenceSensorFn?: (port?: string) => void,
+  stopPresenceSensorFn?: () => void
 ): void {
   switch (msg.type) {
     case 'connected':
@@ -539,6 +608,16 @@ function handleServerMessage(
         } else if (inputSource === 'com' && stopOscBridgeFn) {
           logger.info('[OSC] Admin switched to COM input — stopping OSC bridge');
           stopOscBridgeFn();
+        }
+
+        // Presence sensor — auto-start/stop based on template type change
+        const templateType = msg.payload.templateType as string | undefined;
+        if (templateType === 'custom01-wipro-timeline' && startPresenceSensorFn) {
+          logger.info('[Presence] Template changed to custom01-wipro-timeline — starting sensor');
+          startPresenceSensorFn();
+        } else if (templateType && templateType !== 'custom01-wipro-timeline' && stopPresenceSensorFn) {
+          logger.info('[Presence] Template changed away from wipro-timeline — stopping sensor');
+          stopPresenceSensorFn();
         }
 
         // Admin pushed updated screenMap via device config save
@@ -608,6 +687,7 @@ async function fetchDeviceConfig(
   oscPort: number;
   oscAddress: string;
   oscHost: string;
+  templateType: string;
 } | null> {
   try {
     const url = `${serverUrl}/api/devices/${identity.deviceId}/config`;
@@ -639,7 +719,9 @@ async function fetchDeviceConfig(
     const oscAddress = inputSource === 'osc' ? ((appConfig.oscAddress as string) || '') : '';
     const oscHost = (appConfig.oscHost as string) || '0.0.0.0';
 
-    return { comPort, controllerId, baudRate, screenMap, oscPort, oscAddress, oscHost };
+    const templateType = (assignedApp?.templateType as string) || '';
+
+    return { comPort, controllerId, baudRate, screenMap, oscPort, oscAddress, oscHost, templateType };
   } catch (err) {
     logger.debug('Failed to fetch device config:', err);
     return null;

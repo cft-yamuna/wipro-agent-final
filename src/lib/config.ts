@@ -3,29 +3,8 @@ import { resolve } from 'path';
 import { z } from 'zod';
 import type { AgentConfig } from './types.js';
 
-export function getDefaultKioskBrowserPath(): string {
-  if (process.platform === 'win32') {
-    const candidates = [
-      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-      'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
-      'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
-    ];
-
-    for (const candidate of candidates) {
-      if (existsSync(candidate)) {
-        return candidate;
-      }
-    }
-
-    return 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
-  }
-
-  return 'chromium-browser';
-}
-
 const kioskSchema = z.object({
-  browserPath: z.string().default(getDefaultKioskBrowserPath()),
+  browserPath: z.string().default('chromium-browser'),
   defaultUrl: z.string().url().default('http://localhost:3401/display'),
   extraArgs: z.array(z.string()).default([]),
   pollIntervalMs: z.number().int().min(1000).default(10_000),

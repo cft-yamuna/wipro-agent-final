@@ -3,10 +3,10 @@
 # Cleans up any previous installation automatically before installing.
 #
 # Run as Administrator:
-#   powershell -ExecutionPolicy Bypass -File install-windows.ps1 -Slug "F-AV01" -Server "http://192.168.10.100:3401"
+#   powershell -ExecutionPolicy Bypass -File install-windows.ps1 -Slug "F-AV01" -Server "http://192.168.1.180:3401"
 #
 # Shell Replacement mode (RECOMMENDED for kiosk machines):
-#   powershell -ExecutionPolicy Bypass -File install-windows.ps1 -Slug "F-AV01" -Server "http://192.168.10.100:3401" -ShellReplace
+#   powershell -ExecutionPolicy Bypass -File install-windows.ps1 -Slug "F-AV01" -Server "http://..." -ShellReplace
 #Requires -RunAsAdministrator
 
 param(
@@ -14,8 +14,7 @@ param(
     [Parameter(Mandatory=$true)]  [string]$Server,
     [string]$Timezone = "Asia/Kolkata",
     [string]$Username = "",
-    [switch]$ShellReplace = $false,
-    [int]$PairingTimeoutSeconds = 900
+    [switch]$ShellReplace = $false
 )
 
 $ErrorActionPreference = "Stop"
@@ -33,80 +32,6 @@ $ScriptDir     = Split-Path -Parent $MyInvocation.MyCommand.Path
 $AgentDir      = Split-Path -Parent $ScriptDir
 
 if (-not $Username) { $Username = $env:USERNAME }
-
-function Get-ChromePath {
-    $candidates = @(
-        "C:\Program Files\Google\Chrome\Application\chrome.exe",
-        "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-        (Join-Path $env:LOCALAPPDATA "Google\Chrome\Application\chrome.exe")
-    )
-
-    foreach ($candidate in $candidates) {
-        if ($candidate -and (Test-Path $candidate)) {
-            return $candidate
-        }
-    }
-
-    return $null
-}
-
-function Install-ChromeFromMsi {
-    $is64Bit = [Environment]::Is64BitOperatingSystem
-    $downloadUrl = if ($is64Bit) {
-        "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise64.msi"
-    } else {
-        "https://dl.google.com/dl/chrome/install/googlechromestandaloneenterprise.msi"
-    }
-    $installerName = if ($is64Bit) { "googlechromestandaloneenterprise64.msi" } else { "googlechromestandaloneenterprise.msi" }
-    $installerPath = Join-Path $env:TEMP $installerName
-
-    Write-Host "  Chrome not found. Downloading official Google Chrome MSI..." -ForegroundColor Yellow
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath -UseBasicParsing -TimeoutSec 180
-
-    if (-not (Test-Path $installerPath)) {
-        throw "Chrome MSI was not downloaded."
-    }
-
-    $msiArgs = "/i `"$installerPath`" /qn /norestart"
-    Start-Process msiexec.exe -ArgumentList $msiArgs -Wait -NoNewWindow
-    Remove-Item $installerPath -Force -ErrorAction SilentlyContinue
-}
-
-function Install-ChromeFromWinget {
-    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-        throw "winget is not available."
-    }
-
-    Write-Host "  MSI install failed. Trying winget for Google Chrome..." -ForegroundColor Yellow
-    & winget install --id Google.Chrome --exact --silent --accept-package-agreements --accept-source-agreements 2>&1 | Out-Host
-    if ($LASTEXITCODE -ne 0) {
-        throw "winget install failed with exit code $LASTEXITCODE."
-    }
-}
-
-function Ensure-ChromeInstalled {
-    $existingChrome = Get-ChromePath
-    if ($existingChrome) {
-        Write-Host "  Found Chrome: $existingChrome" -ForegroundColor Green
-        return $existingChrome
-    }
-
-    try {
-        Install-ChromeFromMsi
-    } catch {
-        Write-Host "  Chrome MSI install failed: $($_.Exception.Message)" -ForegroundColor DarkYellow
-        Install-ChromeFromWinget
-    }
-
-    $installedChrome = Get-ChromePath
-    if (-not $installedChrome) {
-        throw "Chrome install did not produce chrome.exe."
-    }
-
-    Write-Host "  Chrome installed: $installedChrome" -ForegroundColor Green
-    return $installedChrome
-}
 
 Write-Host ""
 Write-Host "=============================================" -ForegroundColor Cyan
@@ -144,23 +69,9 @@ foreach ($tn in @($AgentTask, $KioskTask, $GuardianTask)) {
 }
 
 # Kill processes
-Write-Host "[0c] Killing node.exe and kiosk browser..." -ForegroundColor Yellow
-# IMPORTANT:
-# If install-windows.ps1 is launched from the npm CLI wrapper (node.exe),
-# killing all node.exe would terminate the installer mid-run.
-$parentPid = $null
-try {
-    $parentPid = (Get-CimInstance Win32_Process -Filter "ProcessId=$PID" -ErrorAction SilentlyContinue).ParentProcessId
-} catch { }
-Get-Process -Name "node" -ErrorAction SilentlyContinue | ForEach-Object {
-    if ($parentPid -and $_.Id -eq $parentPid) {
-        Write-Host "  Keeping installer parent node.exe (PID $($_.Id))" -ForegroundColor DarkGray
-    } else {
-        Stop-Process -Id $_.Id -Force -ErrorAction SilentlyContinue
-    }
-}
+Write-Host "[0c] Killing node.exe and Chrome..." -ForegroundColor Yellow
+Get-Process -Name "node" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Get-Process -Name "chrome" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
-Get-Process -Name "msedge" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 2
 
 # Remove old files (keep NSSM and logs)
@@ -219,7 +130,6 @@ Copy-Item "$AgentDir\package.json" "$InstallDir\package.json" -Force
 if (Test-Path "$AgentDir\package-lock.json") { Copy-Item "$AgentDir\package-lock.json" "$InstallDir\package-lock.json" -Force }
 Copy-Item "$AgentDir\agent.config.template.json" "$InstallDir\agent.config.template.json" -Force
 if (Test-Path "$AgentDir\public") { Copy-Item "$AgentDir\public" "$InstallDir\public" -Recurse -Force }
-if (Test-Path "$AgentDir\scripts") { Copy-Item "$AgentDir\scripts" "$InstallDir\scripts" -Recurse -Force }
 
 # --- 5. Install deps ---
 Write-Host "[5/19] Installing dependencies..." -ForegroundColor Yellow
@@ -229,16 +139,6 @@ $ErrorActionPreference = "Continue"
 if ($LASTEXITCODE -ne 0) { & npm install --omit=dev --ignore-scripts 2>&1 | Out-Host }
 $ErrorActionPreference = "Stop"
 Pop-Location
-
-# --- 5b. Chrome ---
-Write-Host "[5b/19] Ensuring Google Chrome is installed..." -ForegroundColor Yellow
-try {
-    $chromePath = Ensure-ChromeInstalled
-} catch {
-    Write-Host "  FATAL: $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "  Install Google Chrome manually, then re-run the installer." -ForegroundColor Yellow
-    exit 1
-}
 
 # --- 6. Generate config ---
 Write-Host "[6/19] Generating config..." -ForegroundColor Yellow
@@ -389,49 +289,6 @@ for ($i = 0; $i -lt 10; $i++) {
 }
 if ($portUp) { Write-Host "  Port 3403 LISTENING" -ForegroundColor Green }
 else { Write-Host "  Port 3403 not yet up (may take a moment)" -ForegroundColor Yellow }
-
-# Wait until provisioning is complete (auto-provision or manual pairing)
-Write-Host "[11b/19] Waiting for device provisioning/pairing..." -ForegroundColor Yellow
-$identityPath = Join-Path $InstallDir ".lightman-identity.json"
-$deadline = if ($PairingTimeoutSeconds -gt 0) { (Get-Date).AddSeconds($PairingTimeoutSeconds) } else { $null }
-$paired = $false
-$lastHint = ""
-
-while (-not $paired) {
-    if (Test-Path $identityPath) {
-        try {
-            $identity = Get-Content $identityPath -Raw | ConvertFrom-Json
-            if ($identity.deviceId -and $identity.apiKey) {
-                $paired = $true
-                break
-            }
-        } catch {
-            # File may be mid-write, retry
-        }
-    }
-
-    $logPath = Join-Path $LogDir "service-stdout.log"
-    if (Test-Path $logPath) {
-        try {
-            $hint = Get-Content $logPath -Tail 40 | Where-Object {
-                $_ -match "Pairing required|Waiting for admin to approve pairing|Auto-provisioned|Pairing complete"
-            } | Select-Object -Last 1
-            if ($hint -and $hint -ne $lastHint) {
-                Write-Host "  Agent: $hint" -ForegroundColor DarkGray
-                $lastHint = $hint
-            }
-        } catch { }
-    }
-
-    if ($deadline -and (Get-Date) -ge $deadline) {
-        Write-Host "  FATAL: Pairing timed out after $PairingTimeoutSeconds seconds." -ForegroundColor Red
-        Write-Host "  Check server pairing UI, then re-run installer (or increase -PairingTimeoutSeconds)." -ForegroundColor Yellow
-        exit 1
-    }
-
-    Start-Sleep -Seconds 5
-}
-Write-Host "  Provisioning/pairing complete" -ForegroundColor Green
 
 # --- 12. Firewall ---
 Write-Host "[12/19] Configuring firewall..." -ForegroundColor Yellow
@@ -636,7 +493,7 @@ $svcStatus = if ($finalSvc) { "$($finalSvc.Status)" } else { "NOT FOUND" }
 $cfgOk = $false
 try {
     Push-Location $InstallDir
-    $cfgResult = & node -e "const c=JSON.parse(require('fs').readFileSync('agent.config.json','utf8'));console.log(JSON.stringify({slug:c.deviceSlug,shell:c.kiosk&&c.kiosk.shellMode||false,browser:c.kiosk&&c.kiosk.browserPath||''}))" 2>&1
+    $cfgResult = & node -e "const c=JSON.parse(require('fs').readFileSync('agent.config.json','utf8'));console.log(JSON.stringify({slug:c.deviceSlug,shell:c.kiosk&&c.kiosk.shellMode||false}))" 2>&1
     $cfgData = $cfgResult | ConvertFrom-Json
     Pop-Location
     $cfgOk = $true
@@ -657,7 +514,6 @@ Write-Host "  Service    : $svcStatus" -ForegroundColor $(if ($svcStatus -eq 'Ru
 if ($cfgOk) {
     Write-Host "  Config slug: $($cfgData.slug)" -ForegroundColor $(if ($cfgData.slug -eq $Slug) { 'Green' } else { 'Red' })
     Write-Host "  Shell mode : $($cfgData.shell)" -ForegroundColor $(if ($cfgData.shell -eq $ShellReplace.IsPresent) { 'Green' } else { 'Red' })
-    Write-Host "  Browser    : $($cfgData.browser)" -ForegroundColor Green
 }
 Write-Host ""
 Write-Host "  Manage:" -ForegroundColor DarkGray
