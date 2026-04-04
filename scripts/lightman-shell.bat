@@ -16,6 +16,8 @@ REM ================================================================
 set INSTALL_DIR=C:\Program Files\Lightman\Agent
 set CONFIG_FILE=%INSTALL_DIR%\agent.config.json
 set URL_SIDECAR=C:\ProgramData\Lightman\kiosk-url.txt
+set MULTI_SIDECAR=C:\ProgramData\Lightman\kiosk-multi.json
+set MULTI_LAUNCHER=%INSTALL_DIR%\scripts\launch-multi-kiosk.ps1
 set CHROME_DATA=C:\ProgramData\Lightman\chrome-kiosk
 set LOG_FILE=C:\ProgramData\Lightman\logs\shell.log
 
@@ -119,6 +121,12 @@ set MAX_WAIT=60
 :agent_ready
 echo [%date% %time%] Agent ready >> "%LOG_FILE%"
 
+REM Force Windows into Extend mode so all connected displays are usable.
+if exist "%SystemRoot%\System32\DisplaySwitch.exe" (
+    "%SystemRoot%\System32\DisplaySwitch.exe" /extend >nul 2>&1
+    timeout /t 2 /nobreak >nul
+)
+
 REM ----------------------------------------------------------------
 REM Infinite Chrome loop
 REM ----------------------------------------------------------------
@@ -139,9 +147,18 @@ REM ----------------------------------------------------------------
         )
     )
 
-    echo [%date% %time%] Launching browser: %URL% >> "%LOG_FILE%"
+    set MULTI_COUNT=0
+    if exist "%MULTI_SIDECAR%" (
+        for /f "delims=" %%c in ('node -e "try{const fs=require('fs');const p=String.raw`%MULTI_SIDECAR%`;const j=JSON.parse(fs.readFileSync(p,'utf8'));const n=Array.isArray(j&&j.entries)?j.entries.length:0;console.log(n)}catch(e){console.log(0)}" 2^>nul') do set MULTI_COUNT=%%c
+    )
 
-    start /wait "" "%BROWSER%" --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --no-first-run --no-default-browser-check --start-fullscreen --disable-translate --disable-extensions --autoplay-policy=no-user-gesture-required --disable-features=TranslateUI --user-data-dir="%CHROME_DATA%" "%URL%"
+    if %MULTI_COUNT% gtr 1 if exist "%MULTI_LAUNCHER%" (
+        echo [%date% %time%] Launching multi-screen shell session (%MULTI_COUNT% screens) >> "%LOG_FILE%"
+        powershell -ExecutionPolicy Bypass -NoProfile -File "%MULTI_LAUNCHER%" -BrowserPath "%BROWSER%" -MultiConfigPath "%MULTI_SIDECAR%" -FallbackUrl "%URL%" -LogFile "%LOG_FILE%"
+    ) else (
+        echo [%date% %time%] Launching browser: %URL% >> "%LOG_FILE%"
+        start /wait "" "%BROWSER%" --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --no-first-run --no-default-browser-check --start-fullscreen --disable-translate --disable-extensions --autoplay-policy=no-user-gesture-required --disable-features=TranslateUI --user-data-dir="%CHROME_DATA%" "%URL%"
+    )
 
     echo [%date% %time%] Browser exited (code: %errorlevel%). Restarting in 3s... >> "%LOG_FILE%"
     timeout /t 3 /nobreak >nul

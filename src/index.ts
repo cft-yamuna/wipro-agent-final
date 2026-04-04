@@ -112,7 +112,23 @@ async function main(): Promise<void> {
     identity,
     logger,
     onMessage: (msg: WsMessage) => {
-      handleServerMessage(msg, commandExecutor, logger, powerScheduler, startSerialBridge, stopSerialBridge, startOscBridge, stopOscBridge, multiScreenKiosk, getIdentity, kioskManager, watchdog, startPresenceSensor, stopPresenceSensor);
+      handleServerMessage(
+        msg,
+        commandExecutor,
+        logger,
+        powerScheduler,
+        startSerialBridge,
+        stopSerialBridge,
+        startOscBridge,
+        stopOscBridge,
+        multiScreenKiosk,
+        getIdentity,
+        kioskManager,
+        watchdog,
+        startPresenceSensor,
+        stopPresenceSensor,
+        () => lastKnownTotalScreens
+      );
     },
   });
 
@@ -169,6 +185,7 @@ async function main(): Promise<void> {
   registerMultiScreenKioskCommands(commandExecutor.register.bind(commandExecutor), multiScreenKiosk, getIdentity, logger);
 
   // Detect physical screens and keep them fresh (multi-display setups can change after boot).
+  let lastKnownTotalScreens = 0;
   let detectedScreens = detectScreens(logger);
   multiScreenKiosk.setDetectedScreens(detectedScreens);
 
@@ -503,19 +520,25 @@ async function main(): Promise<void> {
         // 1) Use explicit screenMap when present.
         // 2) For multi-screen apps without a saved map, auto-create placeholders.
         const requestedScreenMap = deviceCfg?.screenMap || [];
-        const isMultiScreenApp = !!deviceCfg && deviceCfg.totalScreens > 1;
-        const effectiveRequestedMap = requestedScreenMap.length > 0
-          ? requestedScreenMap
-          : (isMultiScreenApp ? createPlaceholderScreenMap(deviceCfg.totalScreens) : []);
+        const totalScreens = Math.max(deviceCfg?.totalScreens || 0, requestedScreenMap.length);
+        lastKnownTotalScreens = totalScreens;
+        const effectiveRequestedMap = normalizeScreenMapForTotalScreens(requestedScreenMap, totalScreens);
+
+        if (totalScreens > 1 && detectedScreens.length < totalScreens) {
+          logger.warn(
+            `[MultiKiosk] App expects ${totalScreens} screen(s) but agent detected ${detectedScreens.length}. ` +
+            'Remaining screens may stay black until Windows reports all displays.'
+          );
+        }
 
         if (effectiveRequestedMap.length > 0) {
           const resolved = resolveScreenMap({
             requestedScreenMap: effectiveRequestedMap,
             detectedScreens,
-            totalScreens: Math.max(deviceCfg?.totalScreens || 0, effectiveRequestedMap.length),
+            totalScreens,
           });
           logger.info(
-            `[MultiKiosk] Effective map ready: requested=${effectiveRequestedMap.length}, mode=${resolved.mode}, totalScreens=${deviceCfg?.totalScreens || 0}`
+            `[MultiKiosk] Effective map ready: requested=${requestedScreenMap.length}, effective=${effectiveRequestedMap.length}, mode=${resolved.mode}, totalScreens=${totalScreens}`
           );
           watchdog.setMultiScreenActive(true);
           multiScreenKiosk.applyScreenMap(effectiveRequestedMap, identity).catch((err) => {
@@ -611,6 +634,29 @@ function createPlaceholderScreenMap(totalScreens: number): ScreenMapping[] {
   return Array.from({ length: count }, () => ({ hardwareId: '', url: '' }));
 }
 
+function normalizeScreenMapForTotalScreens(
+  screenMap: ScreenMapping[] | undefined,
+  totalScreens: number
+): ScreenMapping[] {
+  const requested = Array.isArray(screenMap)
+    ? screenMap.map((m) => ({
+      hardwareId: String(m.hardwareId || ''),
+      url: String(m.url || ''),
+      ...(m.label ? { label: String(m.label) } : {}),
+    }))
+    : [];
+
+  const targetCount = Math.max(requested.length, Math.max(0, Math.floor(totalScreens || 0)));
+  if (targetCount === 0) return [];
+
+  if (requested.length >= targetCount) return requested;
+
+  return [
+    ...requested,
+    ...createPlaceholderScreenMap(targetCount - requested.length),
+  ];
+}
+
 function haveScreensChanged(prev: DetectedScreen[], next: DetectedScreen[]): boolean {
   if (prev.length !== next.length) return true;
   for (let i = 0; i < prev.length; i++) {
@@ -645,7 +691,8 @@ function handleServerMessage(
   kioskManager?: KioskManager,
   watchdog?: Watchdog,
   startPresenceSensorFn?: (port?: string) => void,
-  stopPresenceSensorFn?: () => void
+  stopPresenceSensorFn?: () => void,
+  getTotalScreensHint?: () => number
 ): void {
   switch (msg.type) {
     case 'connected':
@@ -700,11 +747,20 @@ function handleServerMessage(
         // Admin pushed updated screenMap via device config save
         const screenMap = msg.payload.screenMap as ScreenMapping[] | undefined;
         if (screenMap && Array.isArray(screenMap) && multiScreenKiosk && getIdentity) {
+          const payloadTotalScreens = Number(msg.payload.totalScreens || 0);
+          const hintTotalScreens = Math.max(
+            Number.isFinite(payloadTotalScreens) ? payloadTotalScreens : 0,
+            getTotalScreensHint ? getTotalScreensHint() : 0
+          );
+          const effectiveScreenMap = screenMap.length > 0
+            ? normalizeScreenMapForTotalScreens(screenMap, hintTotalScreens)
+            : screenMap;
+
           if (screenMap.length > 0) {
-            logger.info(`[MultiKiosk] Received screenMap update: ${screenMap.length} mapping(s) â€” killing single kiosk`);
+            logger.info(`[MultiKiosk] Received screenMap update: requested=${screenMap.length}, effective=${effectiveScreenMap.length}, totalScreens=${hintTotalScreens} â€” killing single kiosk`);
             if (kioskManager) kioskManager.kill().catch(() => {});
             if (watchdog) watchdog.setMultiScreenActive(true);
-            multiScreenKiosk.applyScreenMap(screenMap, getIdentity()).catch((err) => {
+            multiScreenKiosk.applyScreenMap(effectiveScreenMap, getIdentity()).catch((err) => {
               logger.error('[MultiKiosk] Failed to apply screenMap:', err);
             });
           } else {
@@ -721,11 +777,20 @@ function handleServerMessage(
       if (msg.payload && multiScreenKiosk && getIdentity) {
         const screenMap = msg.payload.screenMap as ScreenMapping[] | undefined;
         if (screenMap && Array.isArray(screenMap)) {
+          const payloadTotalScreens = Number(msg.payload.totalScreens || 0);
+          const hintTotalScreens = Math.max(
+            Number.isFinite(payloadTotalScreens) ? payloadTotalScreens : 0,
+            getTotalScreensHint ? getTotalScreensHint() : 0
+          );
+          const effectiveScreenMap = screenMap.length > 0
+            ? normalizeScreenMapForTotalScreens(screenMap, hintTotalScreens)
+            : screenMap;
+
           if (screenMap.length > 0) {
-            logger.info(`[MultiKiosk] Received agent:screenMap: ${screenMap.length} mapping(s) â€” killing single kiosk`);
+            logger.info(`[MultiKiosk] Received agent:screenMap: requested=${screenMap.length}, effective=${effectiveScreenMap.length}, totalScreens=${hintTotalScreens} â€” killing single kiosk`);
             if (kioskManager) kioskManager.kill().catch(() => {});
             if (watchdog) watchdog.setMultiScreenActive(true);
-            multiScreenKiosk.applyScreenMap(screenMap, getIdentity()).catch((err) => {
+            multiScreenKiosk.applyScreenMap(effectiveScreenMap, getIdentity()).catch((err) => {
               logger.error('[MultiKiosk] Failed to apply screenMap:', err);
             });
           } else {

@@ -535,6 +535,16 @@ powercfg /change monitor-timeout-ac 0 2>&1 | Out-Null
 powercfg /change standby-timeout-ac 0 2>&1 | Out-Null
 powercfg /change hibernate-timeout-ac 0 2>&1 | Out-Null
 
+# --- 15b. Display topology ---
+Write-Host "[15b/19] Enforcing display extend mode..." -ForegroundColor Yellow
+if (Test-Path "$env:SystemRoot\System32\DisplaySwitch.exe") {
+    & "$env:SystemRoot\System32\DisplaySwitch.exe" /extend 2>&1 | Out-Null
+    Start-Sleep -Seconds 2
+    Write-Host "  Display mode set to Extend"
+} else {
+    Write-Host "  DisplaySwitch.exe not found - skipped" -ForegroundColor DarkYellow
+}
+
 # --- 16. Harden ---
 Write-Host "[16/19] Hardening Windows..." -ForegroundColor Yellow
 $WU = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU"

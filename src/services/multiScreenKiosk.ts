@@ -1,9 +1,15 @@
-﻿import { spawn } from 'child_process';
+import { spawn } from 'child_process';
 import type { ChildProcess } from 'child_process';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'fs';
+import { basename, dirname } from 'path';
 import type { KioskConfig, ScreenMapping, MultiScreenKioskStatus, SingleScreenStatus } from '../lib/types.js';
 import type { DetectedScreen } from '../lib/screens.js';
 import type { Logger } from '../lib/logger.js';
 import { resolveDetectedScreen, resolveScreenMap } from '../lib/screenMap.js';
+
+const SHELL_MULTI_CONFIG_PATH = process.platform === 'win32'
+  ? 'C:\\ProgramData\\Lightman\\kiosk-multi.json'
+  : '/tmp/lightman-kiosk-multi.json';
 
 interface ScreenInstance {
   hardwareId: string;
@@ -35,6 +41,10 @@ export class MultiScreenKioskManager {
     this.logger = logger;
   }
 
+  private isShellModeOnWindows(): boolean {
+    return process.platform === 'win32' && !!this.config.shellMode;
+  }
+
   /** Update the list of detected physical screens */
   setDetectedScreens(screens: DetectedScreen[]): void {
     this.detectedScreens = screens;
@@ -64,6 +74,12 @@ export class MultiScreenKioskManager {
   }
 
   private async _applyScreenMap(screenMap: ScreenMapping[], identity: { deviceId: string; apiKey: string }): Promise<MultiScreenKioskStatus> {
+    if (this.isShellModeOnWindows()) {
+      this.applyShellMultiConfig(screenMap, identity);
+      this.stopPoll();
+      return this.getStatus();
+    }
+
     const resolvedMap = resolveScreenMap({
       requestedScreenMap: screenMap,
       detectedScreens: this.detectedScreens,
@@ -223,8 +239,87 @@ export class MultiScreenKioskManager {
     return url.toString();
   }
 
+  private applyShellMultiConfig(
+    screenMap: ScreenMapping[],
+    identity: { deviceId: string; apiKey: string }
+  ): void {
+    const entries = screenMap.map((mapping, index) => {
+      const resolvedHardwareId = String(mapping.hardwareId || '').trim() || String(index + 1);
+      const basePath = mapping.url || this.config.defaultUrl;
+      return {
+        hardwareId: resolvedHardwareId,
+        screenIndex: index,
+        url: this.buildUrl(basePath, identity, index),
+      };
+    });
+
+    try {
+      const dir = dirname(SHELL_MULTI_CONFIG_PATH);
+      if (!existsSync(dir)) {
+        mkdirSync(dir, { recursive: true });
+      }
+
+      writeFileSync(
+        SHELL_MULTI_CONFIG_PATH,
+        JSON.stringify({ updatedAt: Date.now(), entries }, null, 2),
+        'utf-8'
+      );
+      this.logger.info(`[MultiKiosk] Shell multi config written (${entries.length} screen(s))`);
+    } catch (err) {
+      this.logger.error('[MultiKiosk] Failed to write shell multi config:', err);
+      return;
+    }
+
+    this.killShellManagedBrowsers();
+  }
+
+  private clearShellMultiConfig(): void {
+    try {
+      if (existsSync(SHELL_MULTI_CONFIG_PATH)) {
+        rmSync(SHELL_MULTI_CONFIG_PATH, { force: true });
+      }
+    } catch (err) {
+      this.logger.warn('[MultiKiosk] Failed to clear shell multi config:', err);
+    }
+  }
+
+  private killShellManagedBrowsers(): void {
+    if (process.platform !== 'win32') return;
+
+    const browserExe = basename(this.config.browserPath || '').toLowerCase();
+    const targets = new Set<string>(['chrome.exe', 'msedge.exe']);
+    if (browserExe.endsWith('.exe')) {
+      targets.add(browserExe);
+    }
+
+    for (const exeName of targets) {
+      try {
+        const killer = spawn('taskkill', ['/IM', exeName, '/F'], {
+          stdio: 'ignore',
+          windowsHide: true,
+        });
+        killer.unref();
+      } catch {
+        // Ignore process-kill failures; shell loop can still recover.
+      }
+    }
+  }
+
   /** Navigate a single screen to a new URL */
   async navigateScreen(hardwareId: string, url: string, identity: { deviceId: string; apiKey: string }): Promise<void> {
+    if (this.isShellModeOnWindows()) {
+      const idx = this.desiredScreenMap.findIndex((m) => String(m.hardwareId || '').trim() === String(hardwareId || '').trim());
+      if (idx === -1) {
+        this.logger.warn(`[MultiKiosk] Cannot navigate ${hardwareId} - not in desired map`);
+        return;
+      }
+
+      const nextMap = this.desiredScreenMap.map((m) => ({ ...m }));
+      nextMap[idx] = { ...nextMap[idx], url };
+      await this.applyScreenMap(nextMap, identity);
+      return;
+    }
+
     const resolvedHardwareId = resolveDetectedScreen(hardwareId, this.detectedScreens)?.hardwareId || hardwareId;
     const existing = this.instances.get(resolvedHardwareId);
     if (!existing) {
@@ -263,6 +358,11 @@ export class MultiScreenKioskManager {
     this.instances.clear();
     this.stopPoll();
 
+    if (this.isShellModeOnWindows()) {
+      this.clearShellMultiConfig();
+      this.killShellManagedBrowsers();
+    }
+
     if (options?.clearDesired !== false) {
       this.desiredScreenMap = [];
       this.desiredIdentity = null;
@@ -272,6 +372,15 @@ export class MultiScreenKioskManager {
   /** Restart all Chrome instances */
   async restartAll(identity: { deviceId: string; apiKey: string }): Promise<MultiScreenKioskStatus> {
     this.logger.info('[MultiKiosk] Restarting all Chrome instances');
+
+    if (this.isShellModeOnWindows()) {
+      if (this.desiredScreenMap.length === 0) {
+        return this.getStatus();
+      }
+      this.killShellManagedBrowsers();
+      await new Promise((r) => setTimeout(r, 2_000));
+      return this.applyScreenMap(this.desiredScreenMap, identity);
+    }
 
     const mappings: ScreenMapping[] = [];
     for (const [, instance] of this.instances) {
@@ -298,6 +407,18 @@ export class MultiScreenKioskManager {
 
   /** Get status of all screen instances */
   getStatus(): MultiScreenKioskStatus {
+    if (this.isShellModeOnWindows() && this.desiredIdentity && this.desiredScreenMap.length > 0) {
+      return {
+        screens: this.desiredScreenMap.map((mapping, index) => ({
+          hardwareId: String(mapping.hardwareId || '').trim() || String(index + 1),
+          url: this.buildUrl(mapping.url || this.config.defaultUrl, this.desiredIdentity!, index),
+          running: false,
+          pid: null,
+          uptimeMs: null,
+        })),
+      };
+    }
+
     const screens: SingleScreenStatus[] = [];
     for (const [, instance] of this.instances) {
       const running = instance.process !== null && instance.process.exitCode === null;
@@ -315,6 +436,9 @@ export class MultiScreenKioskManager {
 
   /** Check if any screens are actively managed */
   isActive(): boolean {
+    if (this.isShellModeOnWindows()) {
+      return this.desiredScreenMap.length > 0;
+    }
     return this.instances.size > 0;
   }
 
