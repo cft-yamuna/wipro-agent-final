@@ -2,8 +2,8 @@
 # Generates agent.config.json for this specific device.
 #
 # Usage (run from agent directory or scripts directory):
-#   powershell -ExecutionPolicy Bypass -File setup.ps1 -Slug "f-av01" -Server "http://192.168.1.100:3401"
-#   powershell -ExecutionPolicy Bypass -File setup.ps1 -Slug "f-av01" -Server "http://192.168.1.100:3401" -Timezone "Asia/Kolkata"
+#   powershell -ExecutionPolicy Bypass -File setup.ps1 -Slug "f-av01" -Server "http://192.168.10.100:3401"
+#   powershell -ExecutionPolicy Bypass -File setup.ps1 -Slug "f-av01" -Server "http://192.168.10.100:3401" -Timezone "Asia/Kolkata"
 #
 # This script MUST be run once on every new device installation.
 # It clears any cached identity so the device provisions fresh.
@@ -42,6 +42,23 @@ Write-Host "  Install dir: $InstallDir"
 Write-Host "  Timezone:    $Timezone"
 Write-Host ""
 
+function Get-KioskBrowserPath {
+    $candidates = @(
+        "C:\Program Files\Google\Chrome\Application\chrome.exe",
+        "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        (Join-Path $env:LOCALAPPDATA "Google\Chrome\Application\chrome.exe"),
+        "C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+        "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        (Join-Path $env:LOCALAPPDATA "Microsoft\Edge\Application\msedge.exe")
+    ) | Where-Object { $_ -and (Test-Path $_) }
+
+    if ($candidates.Count -gt 0) {
+        return $candidates[0]
+    }
+
+    throw "Neither Google Chrome nor Microsoft Edge was found. Install one of them and re-run setup."
+}
+
 # 1. Clear cached identity (CRITICAL - prevents old device credentials leaking)
 $IdentityFile = Join-Path $InstallDir ".lightman-identity.json"
 if (Test-Path $IdentityFile) {
@@ -55,13 +72,12 @@ if (Test-Path $IdentityFile) {
 $KioskUrl  = "http://localhost:3403/display/$Slug"
 
 # 3. Detect browser path
-$BrowserPath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
-if (-not (Test-Path $BrowserPath)) {
-    $BrowserPath = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-}
-if (-not (Test-Path $BrowserPath)) {
-    $BrowserPath = "chromium-browser"
-    Write-Host "[WARN] Chrome not found - using 'chromium-browser'" -ForegroundColor Yellow
+try {
+    $BrowserPath = Get-KioskBrowserPath
+    Write-Host "[OK] Using kiosk browser: $BrowserPath" -ForegroundColor Green
+} catch {
+    Write-Host "[ERROR] $($_.Exception.Message)" -ForegroundColor Red
+    exit 1
 }
 
 $ChromeDataDir = "C:\ProgramData\Lightman\chrome-kiosk"
