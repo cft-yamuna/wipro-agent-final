@@ -14,7 +14,8 @@ param(
     [Parameter(Mandatory=$true)]  [string]$Server,
     [string]$Timezone = "Asia/Kolkata",
     [string]$Username = "",
-    [switch]$ShellReplace = $false
+    [switch]$ShellReplace = $false,
+    [int]$PairingTimeoutSeconds = 900
 )
 
 $ErrorActionPreference = "Stop"
@@ -30,6 +31,30 @@ $KioskTask     = "LIGHTMAN Kiosk Browser"
 $AgentTask     = "LIGHTMAN Agent"
 $ScriptDir     = Split-Path -Parent $MyInvocation.MyCommand.Path
 $AgentDir      = Split-Path -Parent $ScriptDir
+
+function Ensure-PathContains {
+    param(
+        [Parameter(Mandatory=$true)][ValidateSet('Machine','User')] [string]$Scope,
+        [Parameter(Mandatory=$true)] [string]$Entry
+    )
+    $current = [System.Environment]::GetEnvironmentVariable("Path", $Scope)
+    if (-not $current) { $current = "" }
+    $parts = $current -split ';' | Where-Object { $_ -and $_.Trim() -ne "" }
+    $normalizedEntry = $Entry.TrimEnd('\')
+    $exists = $false
+    foreach ($p in $parts) {
+        if ($p.TrimEnd('\') -ieq $normalizedEntry) {
+            $exists = $true
+            break
+        }
+    }
+    if (-not $exists) {
+        $newPath = if ($current -and $current.Trim() -ne "") { "$current;$Entry" } else { $Entry }
+        [System.Environment]::SetEnvironmentVariable("Path", $newPath, $Scope)
+        return $true
+    }
+    return $false
+}
 
 if (-not $Username) { $Username = $env:USERNAME }
 
@@ -106,6 +131,18 @@ try {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
     if (-not (Get-Command node -ErrorAction SilentlyContinue)) { Write-Host "  FATAL: Node.js install failed!" -ForegroundColor Red; exit 1 }
     Write-Host "  Node.js installed" -ForegroundColor Green
+}
+
+# Always ensure Node path remains available after kiosk conversion
+$nodePath = (Get-Command node).Source
+$nodeDir = Split-Path -Parent $nodePath
+$addedMachine = Ensure-PathContains -Scope "Machine" -Entry $nodeDir
+$addedUser = Ensure-PathContains -Scope "User" -Entry $nodeDir
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+if ($addedMachine -or $addedUser) {
+    Write-Host "  Ensured Node.js path in PATH: $nodeDir" -ForegroundColor Green
+} else {
+    Write-Host "  Node.js path already present in PATH"
 }
 
 # --- 2. Build ---

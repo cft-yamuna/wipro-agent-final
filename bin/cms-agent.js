@@ -10,6 +10,7 @@ import { stdin as input, stdout as output, cwd, platform, exit } from 'process';
 
 const DEFAULT_SERVER = 'http://192.168.10.100:3401';
 const INSTALL_CONFIG_PATH = 'C:\\Program Files\\Lightman\\Agent\\agent.config.json';
+const INSTALL_PACKAGE_PATH = 'C:\\Program Files\\Lightman\\Agent\\package.json';
 
 function printUsage() {
   console.log(`
@@ -19,6 +20,7 @@ Commands:
   install             Prompt slug and server IP, install agent with ShellReplace, reboot
   setup               Alias of install
   update              Reinstall/update using installed config, reboot
+  version             Show CLI package version and installed agent version
 
 Options:
   --slug <value>      Device slug (example: C-AV01)
@@ -26,6 +28,7 @@ Options:
   --timezone <tz>     Timezone override (default: Asia/Kolkata)
   --pair-timeout <s>  Wait time for pairing in seconds (default: 900, 0 = no timeout)
   --no-restart        Skip reboot after successful install/update
+  -v, --version       Show version
   -h, --help          Show help
 `);
 }
@@ -186,13 +189,39 @@ function resolveInstallScript() {
   throw new Error('install-windows.ps1 not found. Expected in package scripts/ or current folder scripts/.');
 }
 
+function scriptSupportsPairingTimeout(scriptPath) {
+  try {
+    const script = readFileSync(scriptPath, 'utf8');
+    return script.includes('PairingTimeoutSeconds');
+  } catch {
+    return false;
+  }
+}
+
+function runVersion() {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const bundledPkg = safeReadJson(resolve(here, '../package.json')) || {};
+  const installedPkg = safeReadJson(INSTALL_PACKAGE_PATH) || {};
+
+  const cliVersion = typeof bundledPkg.version === 'string' ? bundledPkg.version : 'unknown';
+  const installedVersion = typeof installedPkg.version === 'string' ? installedPkg.version : 'not-installed';
+
+  console.log(`lightman-agent cli: ${cliVersion}`);
+  console.log(`lightman-agent installed: ${installedVersion}`);
+  console.log(`node: ${process.version}`);
+}
+
 function installUsingPowerShell({ scriptPath, slug, server, timezone, pairingTimeoutSeconds, noRestart }) {
   console.log(`powershell -ExecutionPolicy Bypass -File scripts\\install-windows.ps1 -Slug "${slug}" -Server "${server}" -ShellReplace`);
   const args = ['-ExecutionPolicy', 'Bypass', '-File', scriptPath, '-Slug', slug, '-Server', server, '-ShellReplace'];
   if (timezone) {
     args.push('-Timezone', timezone);
   }
-  if (Number.isInteger(pairingTimeoutSeconds) && pairingTimeoutSeconds >= 0) {
+  if (
+    Number.isInteger(pairingTimeoutSeconds)
+    && pairingTimeoutSeconds >= 0
+    && scriptSupportsPairingTimeout(scriptPath)
+  ) {
     args.push('-PairingTimeoutSeconds', String(pairingTimeoutSeconds));
   }
   runOrFail('powershell.exe', args);
@@ -269,6 +298,11 @@ async function main() {
 
   if (!command || opts.help || command === 'help' || command === '--help' || command === '-h') {
     printUsage();
+    return;
+  }
+
+  if (command === 'version' || command === '--version' || command === '-v') {
+    runVersion();
     return;
   }
 

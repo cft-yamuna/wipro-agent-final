@@ -1,15 +1,16 @@
-import { spawn } from 'child_process';
+﻿import { spawn } from 'child_process';
 import type { ChildProcess } from 'child_process';
 import type { KioskConfig, ScreenMapping, MultiScreenKioskStatus, SingleScreenStatus } from '../lib/types.js';
 import type { DetectedScreen } from '../lib/screens.js';
 import type { Logger } from '../lib/logger.js';
+import { resolveDetectedScreen, resolveScreenMap } from '../lib/screenMap.js';
 
 interface ScreenInstance {
   hardwareId: string;
-  mappingId: string;   // original hardwareId from admin ("1","2","3")
-  mappingUrl: string;  // original URL from mapping (before buildUrl)
-  screenIndex: number; // position in the screenMap array
-  url: string;         // fully built URL with credentials
+  mappingId: string;
+  mappingUrl: string;
+  screenIndex: number;
+  url: string;
   screen: DetectedScreen;
   process: ChildProcess | null;
   startedAt: number | null;
@@ -17,14 +18,15 @@ interface ScreenInstance {
 }
 
 /**
- * Manages multiple Chrome kiosk instances — one per physical display.
- * Each Chrome gets its own --user-data-dir and --window-position to target the correct screen.
+ * Manages multiple Chrome kiosk instances, one per physical display.
  */
 export class MultiScreenKioskManager {
   private config: KioskConfig;
   private logger: Logger;
   private instances: Map<string, ScreenInstance> = new Map();
   private detectedScreens: DetectedScreen[] = [];
+  private desiredScreenMap: ScreenMapping[] = [];
+  private desiredIdentity: { deviceId: string; apiKey: string } | null = null;
   private pollTimer: NodeJS.Timeout | null = null;
   private applying = false;
 
@@ -45,11 +47,14 @@ export class MultiScreenKioskManager {
    * and relaunches those whose URL changed.
    */
   async applyScreenMap(screenMap: ScreenMapping[], identity: { deviceId: string; apiKey: string }): Promise<MultiScreenKioskStatus> {
-    // Guard against concurrent calls
+    this.desiredScreenMap = screenMap.map((m) => ({ ...m }));
+    this.desiredIdentity = { ...identity };
+
     if (this.applying) {
       this.logger.warn('[MultiKiosk] applyScreenMap already in progress, skipping');
       return this.getStatus();
     }
+
     this.applying = true;
     try {
       return await this._applyScreenMap(screenMap, identity);
@@ -59,10 +64,42 @@ export class MultiScreenKioskManager {
   }
 
   private async _applyScreenMap(screenMap: ScreenMapping[], identity: { deviceId: string; apiKey: string }): Promise<MultiScreenKioskStatus> {
-    this.logger.info(`[MultiKiosk] Applying screen map: ${screenMap.length} mapping(s)`);
+    const resolvedMap = resolveScreenMap({
+      requestedScreenMap: screenMap,
+      detectedScreens: this.detectedScreens,
+      totalScreens: screenMap.length,
+    });
 
-    // Find which hardwareIds are no longer mapped — kill those
-    const mappedIds = new Set(screenMap.map(m => m.hardwareId));
+    this.logger.info(
+      `[MultiKiosk] Applying screen map: ${resolvedMap.screenMap.length} mapping(s), mode=${resolvedMap.mode}`
+    );
+
+    const resolvedEntries: Array<{ mapping: ScreenMapping; screen: DetectedScreen; index: number }> = [];
+    const resolvedHardwareIds = new Set<string>();
+
+    for (let idx = 0; idx < resolvedMap.screenMap.length; idx++) {
+      const mapping = resolvedMap.screenMap[idx];
+      if (!mapping.hardwareId) {
+        this.logger.warn(`[MultiKiosk] Mapping index ${idx} has no hardwareId, skipping`);
+        continue;
+      }
+
+      const screen = this.findScreen(mapping.hardwareId);
+      if (!screen) {
+        this.logger.warn(`[MultiKiosk] Screen ${mapping.hardwareId} not detected, skipping`);
+        continue;
+      }
+
+      if (resolvedHardwareIds.has(screen.hardwareId)) {
+        this.logger.warn(`[MultiKiosk] Screen ${screen.hardwareId} is assigned more than once, skipping duplicate`);
+        continue;
+      }
+
+      resolvedHardwareIds.add(screen.hardwareId);
+      resolvedEntries.push({ mapping, screen, index: idx });
+    }
+
+    const mappedIds = new Set(resolvedEntries.map((e) => e.screen.hardwareId));
     for (const [hwId, instance] of this.instances) {
       if (!mappedIds.has(hwId)) {
         this.logger.info(`[MultiKiosk] Screen ${hwId} removed from map, killing Chrome`);
@@ -71,35 +108,22 @@ export class MultiScreenKioskManager {
       }
     }
 
-    // Launch or relaunch for each mapping
-    for (let idx = 0; idx < screenMap.length; idx++) {
-      const mapping = screenMap[idx];
-      // Match by display number: admin saves "1","2","3" — agent detects "\\.\DISPLAY1" etc.
-      const screen = this.findScreen(mapping.hardwareId);
-      if (!screen) {
-        this.logger.warn(`[MultiKiosk] Screen ${mapping.hardwareId} not detected, skipping`);
-        continue;
-      }
-
-      // Use the mapping's URL if provided, otherwise use the default kiosk URL
-      // The screenIndex is the mapping's position (idx) in the array
+    for (const entry of resolvedEntries) {
+      const { mapping, screen, index } = entry;
       const basePath = mapping.url || this.config.defaultUrl;
-      const url = this.buildUrl(basePath, identity, idx);
+      const url = this.buildUrl(basePath, identity, index);
 
-      const existing = this.instances.get(mapping.hardwareId);
+      const existing = this.instances.get(screen.hardwareId);
       if (existing && existing.url === url && existing.process && existing.process.exitCode === null) {
-        // Same URL, Chrome still running — skip
         this.logger.debug(`[MultiKiosk] Screen ${mapping.hardwareId} unchanged, skipping`);
         continue;
       }
 
-      // Kill existing if URL changed
       if (existing) {
         this.killInstance(existing);
       }
 
-      // Launch new Chrome on this screen
-      await this.launchOnScreen(screen.hardwareId, url, screen, identity, mapping.hardwareId, mapping.url || '', idx);
+      await this.launchOnScreen(screen.hardwareId, url, screen, identity, mapping.hardwareId, mapping.url || '', index);
     }
 
     this.startPoll();
@@ -116,11 +140,8 @@ export class MultiScreenKioskManager {
     mappingUrl: string = '',
     screenIndex: number = 0
   ): Promise<void> {
-    // Each screen gets its own user-data-dir to avoid profile lock conflicts
     const sep = process.platform === 'win32' ? '\\' : '/';
-    const basePath = process.platform === 'win32'
-      ? 'C:\\ProgramData\\Lightman'
-      : '/tmp/lightman';
+    const basePath = process.platform === 'win32' ? 'C:\\ProgramData\\Lightman' : '/tmp/lightman';
     const userDataDir = `${basePath}${sep}chrome-kiosk-screen-${screen.index}`;
 
     const args = [
@@ -133,11 +154,13 @@ export class MultiScreenKioskManager {
       `--window-position=${screen.x},${screen.y}`,
       `--window-size=${screen.width},${screen.height}`,
       `--user-data-dir=${userDataDir}`,
-      ...this.config.extraArgs.filter(a => !a.startsWith('--user-data-dir')),
+      ...this.config.extraArgs.filter((a) => !a.startsWith('--user-data-dir')),
       url,
     ];
 
-    this.logger.info(`[MultiKiosk] Launching Chrome on ${hardwareId} (${screen.width}x${screen.height} @ ${screen.x},${screen.y}): ${url}`);
+    this.logger.info(
+      `[MultiKiosk] Launching Chrome on ${hardwareId} (${screen.width}x${screen.height} @ ${screen.x},${screen.y}): ${url}`
+    );
 
     const proc = spawn(this.config.browserPath, args, {
       stdio: 'ignore',
@@ -158,15 +181,15 @@ export class MultiScreenKioskManager {
     };
 
     proc.on('exit', (code) => {
-      // Only auto-restart if this instance is still current (not replaced by a newer applyScreenMap)
       const current = this.instances.get(hardwareId);
       if (!current || current.process !== proc) return;
+
       this.logger.warn(`[MultiKiosk] Chrome on ${hardwareId} exited with code ${code}`);
       setTimeout(() => {
         const stillCurrent = this.instances.get(hardwareId);
         if (stillCurrent && stillCurrent === instance) {
           this.logger.info(`[MultiKiosk] Auto-restarting Chrome on ${hardwareId}`);
-          this.launchOnScreen(hardwareId, url, screen, identity, mappingId, mappingUrl, screenIndex).catch(err => {
+          this.launchOnScreen(hardwareId, url, screen, identity, mappingId, mappingUrl, screenIndex).catch((err) => {
             this.logger.error(`[MultiKiosk] Failed to restart Chrome on ${hardwareId}:`, err);
           });
         }
@@ -182,12 +205,10 @@ export class MultiScreenKioskManager {
 
   /** Build the full URL with device credentials and screenIndex */
   private buildUrl(path: string, identity: { deviceId: string; apiKey: string }, screenIndex?: number): string {
-    // If path is already a full URL, use it; otherwise prepend the local static server
     let fullUrl: string;
     if (path.startsWith('http://') || path.startsWith('https://')) {
       fullUrl = path;
     } else {
-      // Ensure display URL format: /display/{slug}
       const displayPath = path.startsWith('/display/') ? path : `/display/${path.replace(/^\//, '')}`;
       fullUrl = `http://localhost:3403${displayPath}`;
     }
@@ -198,71 +219,81 @@ export class MultiScreenKioskManager {
     if (screenIndex !== undefined) {
       url.searchParams.set('screenIndex', String(screenIndex));
     }
+
     return url.toString();
   }
 
   /** Navigate a single screen to a new URL */
   async navigateScreen(hardwareId: string, url: string, identity: { deviceId: string; apiKey: string }): Promise<void> {
-    const existing = this.instances.get(hardwareId);
+    const resolvedHardwareId = resolveDetectedScreen(hardwareId, this.detectedScreens)?.hardwareId || hardwareId;
+    const existing = this.instances.get(resolvedHardwareId);
     if (!existing) {
-      this.logger.warn(`[MultiKiosk] Cannot navigate ${hardwareId} — not in instance map`);
+      this.logger.warn(`[MultiKiosk] Cannot navigate ${hardwareId} - not in instance map`);
       return;
     }
 
     this.killInstance(existing);
-    const fullUrl = this.buildUrl(url, identity);
-    await this.launchOnScreen(hardwareId, fullUrl, existing.screen, identity);
+    const fullUrl = this.buildUrl(url, identity, existing.screenIndex);
+    await this.launchOnScreen(existing.hardwareId, fullUrl, existing.screen, identity, existing.mappingId, url, existing.screenIndex);
   }
 
   /** Kill Chrome for a specific screen instance */
   private killInstance(instance: ScreenInstance): void {
-    if (instance.process) {
-      instance.process.removeAllListeners();
-      try {
-        instance.process.kill('SIGTERM');
-      } catch {
-        // Already dead
-      }
-      instance.process = null;
+    if (!instance.process) return;
+
+    instance.process.removeAllListeners();
+    try {
+      instance.process.kill('SIGTERM');
+    } catch {
+      // Already dead.
     }
+    instance.process = null;
   }
 
   /** Find a detected screen by display number or full hardware ID */
   private findScreen(id: string): DetectedScreen | undefined {
-    // Direct match (full hardware ID like "\\.\DISPLAY1")
-    const direct = this.detectedScreens.find(s => s.hardwareId === id);
-    if (direct) return direct;
-
-    // Match by display number ("1" → "\\.\DISPLAY1") — anchored to avoid "1" matching "DISPLAY11"
-    if (/^\d+$/.test(id)) {
-      const suffix = 'DISPLAY' + id;
-      return this.detectedScreens.find(s => {
-        const name = s.hardwareId.toUpperCase();
-        return name.endsWith(suffix) && (name.length === suffix.length || name[name.length - suffix.length - 1] === '\\');
-      });
-    }
-
-    return undefined;
+    return resolveDetectedScreen(id, this.detectedScreens);
   }
 
   /** Kill all Chrome instances */
-  async killAll(): Promise<void> {
+  async killAll(options?: { clearDesired?: boolean }): Promise<void> {
     for (const [, instance] of this.instances) {
       this.killInstance(instance);
     }
+    this.instances.clear();
     this.stopPoll();
+
+    if (options?.clearDesired !== false) {
+      this.desiredScreenMap = [];
+      this.desiredIdentity = null;
+    }
   }
 
   /** Restart all Chrome instances */
   async restartAll(identity: { deviceId: string; apiKey: string }): Promise<MultiScreenKioskStatus> {
     this.logger.info('[MultiKiosk] Restarting all Chrome instances');
+
     const mappings: ScreenMapping[] = [];
     for (const [, instance] of this.instances) {
-      mappings.push({ hardwareId: instance.mappingId, url: instance.mappingUrl });
+      mappings.push({ hardwareId: instance.mappingId, url: instance.mappingUrl, label: undefined });
     }
-    await this.killAll();
-    await new Promise(r => setTimeout(r, 2_000));
+
+    await this.killAll({ clearDesired: false });
+    await new Promise((r) => setTimeout(r, 2_000));
     return this.applyScreenMap(mappings, identity);
+  }
+
+  hasDesiredScreenMap(): boolean {
+    return this.desiredScreenMap.length > 0;
+  }
+
+  async reapplyDesiredMap(identity?: { deviceId: string; apiKey: string }): Promise<MultiScreenKioskStatus> {
+    const id = identity || this.desiredIdentity;
+    if (!id || this.desiredScreenMap.length === 0) {
+      return this.getStatus();
+    }
+
+    return this.applyScreenMap(this.desiredScreenMap, id);
   }
 
   /** Get status of all screen instances */
@@ -278,6 +309,7 @@ export class MultiScreenKioskManager {
         uptimeMs: running && instance.startedAt ? Date.now() - instance.startedAt : null,
       });
     }
+
     return { screens };
   }
 
@@ -290,35 +322,36 @@ export class MultiScreenKioskManager {
   destroy(): void {
     this.stopPoll();
     for (const [, instance] of this.instances) {
-      if (instance.process) {
-        try {
-          instance.process.removeAllListeners();
-          instance.process.kill('SIGKILL');
-        } catch {
-          // Already dead
-        }
-        instance.process = null;
+      if (!instance.process) continue;
+      try {
+        instance.process.removeAllListeners();
+        instance.process.kill('SIGKILL');
+      } catch {
+        // Already dead.
       }
+      instance.process = null;
     }
     this.instances.clear();
+    this.desiredScreenMap = [];
+    this.desiredIdentity = null;
   }
 
   private startPoll(): void {
     if (this.pollTimer) return;
+
     this.pollTimer = setInterval(() => {
       for (const [, instance] of this.instances) {
         if (instance.process && instance.process.exitCode !== null) {
           this.logger.warn(`[MultiKiosk] Poll: Chrome on ${instance.hardwareId} died`);
-          // exit handler will auto-restart
+          // Exit handler will auto-restart.
         }
       }
     }, this.config.pollIntervalMs);
   }
 
   private stopPoll(): void {
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
-    }
+    if (!this.pollTimer) return;
+    clearInterval(this.pollTimer);
+    this.pollTimer = null;
   }
 }

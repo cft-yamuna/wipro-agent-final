@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+﻿import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { loadConfig } from './lib/config.js';
 import { Logger } from './lib/logger.js';
@@ -12,6 +12,8 @@ import { registerKioskCommands, registerMultiScreenKioskCommands } from './comma
 import { registerScreenshotCommands } from './commands/screenshot.js';
 import { MultiScreenKioskManager } from './services/multiScreenKiosk.js';
 import { detectScreens } from './lib/screens.js';
+import type { DetectedScreen } from './lib/screens.js';
+import { resolveScreenMap } from './lib/screenMap.js';
 import { registerDisplayCommands } from './commands/display.js';
 import { registerNetworkCommands } from './commands/network.js';
 import { Updater } from './services/updater.js';
@@ -71,7 +73,7 @@ async function main(): Promise<void> {
   }
 
   // 2. Provision (get identity)
-  // Provision with retry — never crash, just keep trying.
+  // Provision with retry â€” never crash, just keep trying.
   // This prevents NSSM restart loops that kill Chrome (blinking screen).
   let identity: Identity | null = null;
   const MAX_PROVISION_ATTEMPTS = 999;
@@ -97,7 +99,7 @@ async function main(): Promise<void> {
   }
 
   if (!identity) {
-    logger.error('Provisioning failed — no identity. Exiting.');
+    logger.error('Provisioning failed â€” no identity. Exiting.');
     process.exit(1);
   }
 
@@ -161,14 +163,65 @@ async function main(): Promise<void> {
   const kioskManager = new KioskManager(kioskConfig, logger);
   registerKioskCommands(commandExecutor.register.bind(commandExecutor), kioskManager, logger);
 
-  // Multi-screen kiosk manager — handles multiple Chrome instances on multi-display devices
+  // Multi-screen kiosk manager â€” handles multiple Chrome instances on multi-display devices
   const multiScreenKiosk = new MultiScreenKioskManager(kioskConfig, logger);
   const getIdentity = () => identity!;
   registerMultiScreenKioskCommands(commandExecutor.register.bind(commandExecutor), multiScreenKiosk, getIdentity, logger);
 
-  // Detect physical screens and report to server
-  const detectedScreens = detectScreens(logger);
+  // Detect physical screens and keep them fresh (multi-display setups can change after boot).
+  let detectedScreens = detectScreens(logger);
   multiScreenKiosk.setDetectedScreens(detectedScreens);
+
+  const toScreenPayload = (screens: DetectedScreen[]) => (
+    screens.map((s) => ({
+      hardwareId: s.hardwareId,
+      name: s.name,
+      index: s.index,
+      width: s.width,
+      height: s.height,
+      x: s.x,
+      y: s.y,
+      primary: s.primary,
+    }))
+  );
+
+  const sendAgentRegister = () => {
+    wsClient.send({
+      type: 'agent:register',
+      payload: {
+        agentVersion: getAgentVersion(),
+        screens: toScreenPayload(detectedScreens),
+      },
+      timestamp: Date.now(),
+    });
+  };
+
+  const refreshDetectedScreens = async (reason: string) => {
+    const latest = detectScreens(logger);
+    if (!haveScreensChanged(detectedScreens, latest)) return;
+
+    logger.info(`[Screens] Topology changed (${reason}): ${detectedScreens.length} -> ${latest.length}`);
+    detectedScreens = latest;
+    multiScreenKiosk.setDetectedScreens(detectedScreens);
+
+    if (wsClient.isConnected()) {
+      sendAgentRegister();
+    }
+
+    if (multiScreenKiosk.hasDesiredScreenMap()) {
+      try {
+        await multiScreenKiosk.reapplyDesiredMap(identity);
+      } catch (err) {
+        logger.error('[MultiKiosk] Failed to reapply desired screen map after topology change:', err);
+      }
+    }
+  };
+
+  const screenRefreshInterval = setInterval(() => {
+    refreshDetectedScreens('periodic-refresh').catch((err) => {
+      logger.error('[Screens] Periodic refresh failed:', err);
+    });
+  }, 20_000);
 
   // Create Watchdog (Phase 20)
   const watchdog = new Watchdog(
@@ -210,11 +263,11 @@ async function main(): Promise<void> {
   // Register serial/COM port commands (works on all platforms)
   registerSerialCommands(commandExecutor.register.bind(commandExecutor), logger);
 
-  // Local hardware event server — broadcasts directly to Chrome on this device
+  // Local hardware event server â€” broadcasts directly to Chrome on this device
   const localEventServer = new LocalEventServer(config.localEventsPort || 3402, logger);
   localEventServer.start();
 
-  // OSC bridge — listens on UDP for OSC messages and forwards triggers to display
+  // OSC bridge â€” listens on UDP for OSC messages and forwards triggers to display
   let oscBridge: OscBridge | null = null;
 
   const startOscBridge = (oscPort: number, oscAddress: string, oscHost?: string) => {
@@ -223,7 +276,7 @@ async function main(): Promise<void> {
       oscBridge.stop();
       oscBridge = null;
     }
-    logger.info(`[OSC] Starting bridge — UDP ${oscHost || '0.0.0.0'}:${oscPort} address: ${oscAddress}`);
+    logger.info(`[OSC] Starting bridge â€” UDP ${oscHost || '0.0.0.0'}:${oscPort} address: ${oscAddress}`);
     oscBridge = new OscBridge({
       wsClient,
       logger,
@@ -239,7 +292,7 @@ async function main(): Promise<void> {
     if (oscBridge) { oscBridge.stop(); oscBridge = null; }
   };
 
-  // Serial bridge — reads COM port chars (* → pickup, # → hangup) and forwards to server
+  // Serial bridge â€” reads COM port chars (* â†’ pickup, # â†’ hangup) and forwards to server
   let serialBridge: SerialBridge | null = null;
 
   /** Start or restart the serial bridge with given COM port and controllerId */
@@ -260,14 +313,14 @@ async function main(): Promise<void> {
       onEvent: (event) => localEventServer.broadcast({ type: 'hardware:event', payload: event }),
     });
     serialBridge.start();
-    logger.info(`[SERIAL] Bridge started — waiting for hardware events on ${comPort}`);
+    logger.info(`[SERIAL] Bridge started â€” waiting for hardware events on ${comPort}`);
   };
 
   const stopSerialBridge = () => {
     if (serialBridge) { serialBridge.stop(); serialBridge = null; }
   };
 
-  // Presence sensor — auto-detects HLK-LD2410B via USB serial
+  // Presence sensor â€” auto-detects HLK-LD2410B via USB serial
   let presenceSensor: PresenceSensor | null = null;
 
   const startPresenceSensor = (port?: string) => {
@@ -414,23 +467,7 @@ async function main(): Promise<void> {
   // Send registration message once connected, then auto-launch kiosk
   const registerInterval = setInterval(() => {
     if (wsClient.isConnected()) {
-      wsClient.send({
-        type: 'agent:register',
-        payload: {
-          agentVersion: getAgentVersion(),
-          screens: detectedScreens.map(s => ({
-            hardwareId: s.hardwareId,
-            name: s.name,
-            index: s.index,
-            width: s.width,
-            height: s.height,
-            x: s.x,
-            y: s.y,
-            primary: s.primary,
-          })),
-        },
-        timestamp: Date.now(),
-      });
+      sendAgentRegister();
       clearInterval(registerInterval);
 
       // Fetch device config first to decide single vs multi-screen kiosk
@@ -441,39 +478,53 @@ async function main(): Promise<void> {
           const controllerId = deviceCfg.controllerId || comPort;
           const bridgeBaud = deviceCfg.baudRate || 115200;
           logger.info(`[SERIAL] com_port found: ${comPort} | controllerId: ${controllerId} | baud: ${bridgeBaud}`);
-          logger.info(`[SERIAL] Starting serial bridge — listening on ${comPort}...`);
+          logger.info(`[SERIAL] Starting serial bridge â€” listening on ${comPort}...`);
           startSerialBridge(comPort, controllerId, bridgeBaud);
         } else {
-          logger.info('[SERIAL] No com_port configured on this device — serial bridge not started');
+          logger.info('[SERIAL] No com_port configured on this device â€” serial bridge not started');
         }
 
-        // OSC bridge — auto-start if app config has inputSource === 'osc'
+        // OSC bridge â€” auto-start if app config has inputSource === 'osc'
         if (deviceCfg && deviceCfg.oscPort && deviceCfg.oscAddress) {
           logger.info(`[OSC] Config found: port=${deviceCfg.oscPort} address=${deviceCfg.oscAddress}`);
           startOscBridge(deviceCfg.oscPort, deviceCfg.oscAddress, deviceCfg.oscHost);
         } else {
-          logger.info('[OSC] No OSC config on this device — OSC bridge not started');
+          logger.info('[OSC] No OSC config on this device â€” OSC bridge not started');
         }
 
-        // Presence sensor — auto-start if template is presence-enabled (e.g. wipro-timeline)
+        // Presence sensor â€” auto-start if template is presence-enabled (e.g. wipro-timeline)
         if (deviceCfg && deviceCfg.templateType === 'custom01-wipro-timeline') {
-          logger.info('[Presence] Template is custom01-wipro-timeline — auto-starting presence sensor');
+          logger.info('[Presence] Template is custom01-wipro-timeline â€” auto-starting presence sensor');
           startPresenceSensor();
         } else {
-          logger.info('[Presence] Template is not presence-enabled — sensor not started');
+          logger.info('[Presence] Template is not presence-enabled â€” sensor not started');
         }
+        // Multi-screen handling:
+        // 1) Use explicit screenMap when present.
+        // 2) For multi-screen apps without a saved map, auto-create placeholders.
+        const requestedScreenMap = deviceCfg?.screenMap || [];
+        const isMultiScreenApp = !!deviceCfg && deviceCfg.totalScreens > 1;
+        const effectiveRequestedMap = requestedScreenMap.length > 0
+          ? requestedScreenMap
+          : (isMultiScreenApp ? createPlaceholderScreenMap(deviceCfg.totalScreens) : []);
 
-        // Multi-screen: if screenMap exists, use MultiScreenKioskManager — do NOT launch single kiosk
-        if (deviceCfg && deviceCfg.screenMap && deviceCfg.screenMap.length > 0) {
-          logger.info(`[MultiKiosk] Found screenMap in device config: ${deviceCfg.screenMap.length} mapping(s) — skipping single kiosk`);
+        if (effectiveRequestedMap.length > 0) {
+          const resolved = resolveScreenMap({
+            requestedScreenMap: effectiveRequestedMap,
+            detectedScreens,
+            totalScreens: Math.max(deviceCfg?.totalScreens || 0, effectiveRequestedMap.length),
+          });
+          logger.info(
+            `[MultiKiosk] Effective map ready: requested=${effectiveRequestedMap.length}, mode=${resolved.mode}, totalScreens=${deviceCfg?.totalScreens || 0}`
+          );
           watchdog.setMultiScreenActive(true);
-          multiScreenKiosk.applyScreenMap(deviceCfg.screenMap, identity).catch((err) => {
-            logger.error('[MultiKiosk] Failed to apply screenMap from config:', err);
+          multiScreenKiosk.applyScreenMap(effectiveRequestedMap, identity).catch((err) => {
+            logger.error('[MultiKiosk] Failed to apply effective screenMap from config:', err);
           });
           return;
         }
 
-        // No screenMap — launch single-screen kiosk as before
+        // No effective multi-screen map - launch single-screen kiosk as before
         if (config.kiosk) {
           if (config.kiosk.shellMode) {
             logger.info('Shell mode: skipping Chrome launch (managed by Windows shell)');
@@ -504,6 +555,7 @@ async function main(): Promise<void> {
   const shutdown = async (signal: string): Promise<void> => {
     logger.info(`${signal} received. Shutting down...`);
     clearInterval(registerInterval);
+    clearInterval(screenRefreshInterval);
 
     // Wait for updater to finish if it's busy (max 60s)
     if (updater.isBusy()) {
@@ -554,6 +606,31 @@ async function main(): Promise<void> {
   logger.info('LIGHTMAN Agent running.');
 }
 
+function createPlaceholderScreenMap(totalScreens: number): ScreenMapping[] {
+  const count = Math.max(0, Math.floor(totalScreens || 0));
+  return Array.from({ length: count }, () => ({ hardwareId: '', url: '' }));
+}
+
+function haveScreensChanged(prev: DetectedScreen[], next: DetectedScreen[]): boolean {
+  if (prev.length !== next.length) return true;
+  for (let i = 0; i < prev.length; i++) {
+    const a = prev[i];
+    const b = next[i];
+    if (
+      a.hardwareId !== b.hardwareId
+      || a.index !== b.index
+      || a.x !== b.x
+      || a.y !== b.y
+      || a.width !== b.width
+      || a.height !== b.height
+      || a.primary !== b.primary
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function handleServerMessage(
   msg: WsMessage,
   commandExecutor: CommandExecutor,
@@ -589,11 +666,11 @@ function handleServerMessage(
         const comPort = msg.payload.com_port as string | undefined;
         if (comPort && startSerialBridge) {
           const controllerId = (msg.payload.controllerId as string) || comPort;
-          logger.info(`[SERIAL] Admin updated com_port → ${comPort} | Restarting serial bridge...`);
+          logger.info(`[SERIAL] Admin updated com_port â†’ ${comPort} | Restarting serial bridge...`);
           startSerialBridge(comPort, controllerId);
           logger.info(`[SERIAL] Serial bridge now listening on ${comPort}`);
         } else if (comPort === '' && stopSerialBridge) {
-          logger.info('[SERIAL] Admin cleared com_port — stopping serial bridge');
+          logger.info('[SERIAL] Admin cleared com_port â€” stopping serial bridge');
           stopSerialBridge();
         }
 
@@ -603,20 +680,20 @@ function handleServerMessage(
         const inputSource = msg.payload.inputSource as string | undefined;
         if (inputSource === 'osc' && oscPort && oscAddress && startOscBridgeFn) {
           const oscHost = (msg.payload.oscHost as string) || '0.0.0.0';
-          logger.info(`[OSC] Admin updated OSC config → port=${oscPort} address=${oscAddress} — restarting bridge...`);
+          logger.info(`[OSC] Admin updated OSC config â†’ port=${oscPort} address=${oscAddress} â€” restarting bridge...`);
           startOscBridgeFn(oscPort, oscAddress, oscHost);
         } else if (inputSource === 'com' && stopOscBridgeFn) {
-          logger.info('[OSC] Admin switched to COM input — stopping OSC bridge');
+          logger.info('[OSC] Admin switched to COM input â€” stopping OSC bridge');
           stopOscBridgeFn();
         }
 
-        // Presence sensor — auto-start/stop based on template type change
+        // Presence sensor â€” auto-start/stop based on template type change
         const templateType = msg.payload.templateType as string | undefined;
         if (templateType === 'custom01-wipro-timeline' && startPresenceSensorFn) {
-          logger.info('[Presence] Template changed to custom01-wipro-timeline — starting sensor');
+          logger.info('[Presence] Template changed to custom01-wipro-timeline â€” starting sensor');
           startPresenceSensorFn();
         } else if (templateType && templateType !== 'custom01-wipro-timeline' && stopPresenceSensorFn) {
-          logger.info('[Presence] Template changed away from wipro-timeline — stopping sensor');
+          logger.info('[Presence] Template changed away from wipro-timeline â€” stopping sensor');
           stopPresenceSensorFn();
         }
 
@@ -624,15 +701,15 @@ function handleServerMessage(
         const screenMap = msg.payload.screenMap as ScreenMapping[] | undefined;
         if (screenMap && Array.isArray(screenMap) && multiScreenKiosk && getIdentity) {
           if (screenMap.length > 0) {
-            logger.info(`[MultiKiosk] Received screenMap update: ${screenMap.length} mapping(s) — killing single kiosk`);
+            logger.info(`[MultiKiosk] Received screenMap update: ${screenMap.length} mapping(s) â€” killing single kiosk`);
             if (kioskManager) kioskManager.kill().catch(() => {});
             if (watchdog) watchdog.setMultiScreenActive(true);
             multiScreenKiosk.applyScreenMap(screenMap, getIdentity()).catch((err) => {
               logger.error('[MultiKiosk] Failed to apply screenMap:', err);
             });
           } else {
-            // Empty screenMap — deactivate multi-screen, resume single kiosk
-            logger.info('[MultiKiosk] Empty screenMap received — deactivating multi-screen');
+            // Empty screenMap â€” deactivate multi-screen, resume single kiosk
+            logger.info('[MultiKiosk] Empty screenMap received â€” deactivating multi-screen');
             multiScreenKiosk.killAll().catch(() => {});
             if (watchdog) watchdog.setMultiScreenActive(false);
           }
@@ -645,14 +722,14 @@ function handleServerMessage(
         const screenMap = msg.payload.screenMap as ScreenMapping[] | undefined;
         if (screenMap && Array.isArray(screenMap)) {
           if (screenMap.length > 0) {
-            logger.info(`[MultiKiosk] Received agent:screenMap: ${screenMap.length} mapping(s) — killing single kiosk`);
+            logger.info(`[MultiKiosk] Received agent:screenMap: ${screenMap.length} mapping(s) â€” killing single kiosk`);
             if (kioskManager) kioskManager.kill().catch(() => {});
             if (watchdog) watchdog.setMultiScreenActive(true);
             multiScreenKiosk.applyScreenMap(screenMap, getIdentity()).catch((err) => {
               logger.error('[MultiKiosk] Failed to apply screenMap:', err);
             });
           } else {
-            logger.info('[MultiKiosk] Empty agent:screenMap — deactivating multi-screen');
+            logger.info('[MultiKiosk] Empty agent:screenMap â€” deactivating multi-screen');
             multiScreenKiosk.killAll().catch(() => {});
             if (watchdog) watchdog.setMultiScreenActive(false);
           }
@@ -684,6 +761,7 @@ async function fetchDeviceConfig(
   controllerId: string;
   baudRate: number;
   screenMap: ScreenMapping[];
+  totalScreens: number;
   oscPort: number;
   oscAddress: string;
   oscHost: string;
@@ -712,6 +790,10 @@ async function fetchDeviceConfig(
 
     // Screen map from device config (set by admin)
     const screenMap = (device?.screenMap as ScreenMapping[]) || [];
+    const appScreens = (appConfig.screens as Array<Record<string, unknown>>) || [];
+    const totalScreens = appScreens.length > 0
+      ? appScreens.length
+      : ((appConfig.totalScreens as number) || 0);
 
     // OSC settings from app config (custom07-osc template)
     const inputSource = appConfig.inputSource as string;
@@ -721,7 +803,7 @@ async function fetchDeviceConfig(
 
     const templateType = (assignedApp?.templateType as string) || '';
 
-    return { comPort, controllerId, baudRate, screenMap, oscPort, oscAddress, oscHost, templateType };
+    return { comPort, controllerId, baudRate, screenMap, totalScreens, oscPort, oscAddress, oscHost, templateType };
   } catch (err) {
     logger.debug('Failed to fetch device config:', err);
     return null;
@@ -732,3 +814,4 @@ main().catch((err) => {
   console.error('Fatal error:', err);
   process.exit(1);
 });
+
