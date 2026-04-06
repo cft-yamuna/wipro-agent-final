@@ -10,6 +10,16 @@ import { stdin as input, stdout as output, cwd, platform, exit } from 'process';
 
 const DEFAULT_SERVER = 'http://192.168.10.100:3401';
 const INSTALL_CONFIG_PATH = 'C:\\Program Files\\Lightman\\Agent\\agent.config.json';
+const PACKAGE_JSON_PATH = resolve(dirname(fileURLToPath(import.meta.url)), '../package.json');
+
+function getVersion() {
+  try {
+    const pkg = JSON.parse(readFileSync(PACKAGE_JSON_PATH, 'utf8'));
+    return String(pkg.version || '0.0.0');
+  } catch {
+    return '0.0.0';
+  }
+}
 
 function printUsage() {
   console.log(`
@@ -19,6 +29,7 @@ Commands:
   install             Prompt slug and server IP, install agent with ShellReplace, reboot
   setup               Alias of install
   update              Reinstall/update using installed config, reboot
+  version             Print package version
 
 Options:
   --slug <value>      Device slug (example: C-AV01)
@@ -278,6 +289,10 @@ async function main() {
   }
   if (command === 'update') {
     await runUpdate(opts);
+    return;
+  }
+  if (command === 'version' || command === '--version' || command === '-v') {
+    console.log(`lightman-agent v${getVersion()}`);
     return;
   }
 

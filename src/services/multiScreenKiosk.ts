@@ -226,7 +226,7 @@ export class MultiScreenKioskManager {
       fullUrl = path;
     } else {
       const displayPath = path.startsWith('/display/') ? path : `/display/${path.replace(/^\//, '')}`;
-      fullUrl = `http://localhost:3403${displayPath}`;
+      fullUrl = `http://127.0.0.1:3403${displayPath}`;
     }
 
     const url = new URL(fullUrl);

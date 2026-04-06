@@ -38,6 +38,16 @@ function Get-BrowserProcessName {
     return "chrome"
 }
 
+function Get-ShellModeEnabled {
+    try {
+        if (Test-Path $ConfigPath) {
+            $config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
+            return [bool]($config.kiosk -and $config.kiosk.shellMode)
+        }
+    } catch { }
+    return $false
+}
+
 try {
     # 1. Check LIGHTMAN service
     $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
@@ -77,8 +87,13 @@ try {
 
     # 2. Check kiosk browser
     $browserProcess = Get-BrowserProcessName
+    $shellMode = Get-ShellModeEnabled
     $browser = Get-Process -Name $browserProcess -ErrorAction SilentlyContinue
     if (-not $browser) {
+        if ($shellMode) {
+            Write-GuardianLog "Browser '$browserProcess' not running in shell mode. Skipping VBS launch; shell will recover."
+            exit 0
+        }
         $vbsPath = "C:\Program Files\Lightman\Agent\launch-kiosk.vbs"
         if (Test-Path $vbsPath) {
             Start-Sleep -Seconds 10

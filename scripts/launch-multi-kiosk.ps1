@@ -84,6 +84,8 @@ if (-not (Test-Path $MultiConfigPath)) {
         "--no-default-browser-check",
         "--autoplay-policy=no-user-gesture-required",
         "--disable-features=TranslateUI",
+        "--proxy-server=direct://",
+        "--proxy-bypass-list=*",
         "--user-data-dir=C:\ProgramData\Lightman\chrome-kiosk",
         $FallbackUrl
     ) -PassThru
@@ -104,6 +106,8 @@ if ($entries.Count -le 1) {
         "--no-default-browser-check",
         "--autoplay-policy=no-user-gesture-required",
         "--disable-features=TranslateUI",
+        "--proxy-server=direct://",
+        "--proxy-bypass-list=*",
         "--user-data-dir=C:\ProgramData\Lightman\chrome-kiosk",
         $FallbackUrl
     ) -PassThru
@@ -151,6 +155,8 @@ for ($i = 0; $i -lt $entries.Count; $i++) {
         "--no-default-browser-check",
         "--autoplay-policy=no-user-gesture-required",
         "--disable-features=TranslateUI",
+        "--proxy-server=direct://",
+        "--proxy-bypass-list=*",
         "--window-position=$x,$y",
         "--window-size=$w,$h",
         "--user-data-dir=$userDataDir",
@@ -172,6 +178,8 @@ if ($processes.Count -eq 0) {
         "--no-default-browser-check",
         "--autoplay-policy=no-user-gesture-required",
         "--disable-features=TranslateUI",
+        "--proxy-server=direct://",
+        "--proxy-bypass-list=*",
         "--user-data-dir=C:\ProgramData\Lightman\chrome-kiosk",
         $FallbackUrl
     ) -PassThru

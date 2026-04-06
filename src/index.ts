@@ -167,6 +167,12 @@ async function main(): Promise<void> {
   if (!normalizedExtraArgs.some((arg) => arg.startsWith('--autoplay-policy='))) {
     normalizedExtraArgs.push('--autoplay-policy=no-user-gesture-required');
   }
+  if (!normalizedExtraArgs.some((arg) => arg.startsWith('--proxy-server='))) {
+    normalizedExtraArgs.push('--proxy-server=direct://');
+  }
+  if (!normalizedExtraArgs.some((arg) => arg.startsWith('--proxy-bypass-list='))) {
+    normalizedExtraArgs.push('--proxy-bypass-list=*');
+  }
   // Inject credentials into the kiosk URL so Chrome auto-provisions without pairing
   const kioskUrl = new URL(baseKioskConfig.defaultUrl);
   kioskUrl.searchParams.set('deviceId', identity.deviceId);

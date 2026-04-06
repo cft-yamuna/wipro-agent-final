@@ -26,6 +26,8 @@ objFile.Close
 
 browserPath = ExtractJsonValue(jsonText, "browserPath")
 defaultUrl = ExtractJsonValue(jsonText, "defaultUrl")
+defaultUrl = Replace(defaultUrl, "http://localhost:3403", "http://127.0.0.1:3403")
+defaultUrl = Replace(defaultUrl, "https://localhost:3403", "http://127.0.0.1:3403")
 browserExeName = LCase(ExtractFileName(browserPath))
 
 If browserExeName = "" Then
@@ -77,7 +79,7 @@ Do While waitedMs < (maxWaitSeconds * 1000)
 Loop
 
 ' --- Build Chrome kiosk args ---
-chromeArgs = "--kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --no-first-run --no-default-browser-check --start-fullscreen --disable-translate --disable-extensions --autoplay-policy=no-user-gesture-required"
+chromeArgs = "--kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --no-first-run --no-default-browser-check --start-fullscreen --disable-translate --disable-extensions --autoplay-policy=no-user-gesture-required --proxy-server=direct:// --proxy-bypass-list=*"
 
 userDataDir = ExtractJsonValue(jsonText, "user-data-dir")
 If userDataDir = "" Then

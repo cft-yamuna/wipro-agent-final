@@ -64,19 +64,26 @@ if exist "%CONFIG_FILE%" (
 
 REM Build URL from slug (ALWAYS from config, never from sidecar)
 if not "%DEVICE_SLUG%"=="" (
-    set URL=http://localhost:3403/display/%DEVICE_SLUG%
+    set URL=http://127.0.0.1:3403/display/%DEVICE_SLUG%
     echo [%date% %time%] Slug: %DEVICE_SLUG% >> "%LOG_FILE%"
 ) else (
-    set URL=http://localhost:3403/display
+    set URL=http://127.0.0.1:3403/display
     echo [%date% %time%] WARNING: No slug in config! >> "%LOG_FILE%"
 )
 
 REM If agent wrote a URL sidecar (includes deviceId/apiKey), prefer it.
 if exist "%URL_SIDECAR%" (
     for /f "usebackq delims=" %%u in ("%URL_SIDECAR%") do set SIDE_URL=%%u
+    set USE_SIDE_URL=0
     if not "%SIDE_URL%"=="" (
+        echo %SIDE_URL% | find /I "127.0.0.1:3403" >nul && set USE_SIDE_URL=1
+        echo %SIDE_URL% | find /I "localhost:3403" >nul && set USE_SIDE_URL=1
+    )
+    if "%USE_SIDE_URL%"=="1" (
         set URL=%SIDE_URL%
-        echo [%date% %time%] Using sidecar URL >> "%LOG_FILE%"
+        echo [%date% %time%] Using sidecar local URL >> "%LOG_FILE%"
+    ) else (
+        if not "%SIDE_URL%"=="" echo [%date% %time%] Ignoring non-local sidecar URL >> "%LOG_FILE%"
     )
 )
 
@@ -105,27 +112,32 @@ REM Wait for agent service (port 3403)
 REM ----------------------------------------------------------------
 echo [%date% %time%] Waiting for port 3403... >> "%LOG_FILE%"
 set WAIT_COUNT=0
-set MAX_WAIT=60
 
 :wait_for_agent
     netstat -an | findstr ":3403.*LISTENING" >nul 2>&1
     if %errorlevel%==0 goto agent_ready
     set /a WAIT_COUNT+=1
-    if %WAIT_COUNT% geq %MAX_WAIT% (
-        echo [%date% %time%] Port 3403 not ready after %MAX_WAIT%s, launching anyway >> "%LOG_FILE%"
-        goto agent_ready
-    )
+    set /a WAIT_MOD=WAIT_COUNT %% 30
+    if %WAIT_MOD%==0 echo [%date% %time%] Still waiting for port 3403... (%WAIT_COUNT%s) >> "%LOG_FILE%"
     timeout /t 1 /nobreak >nul
     goto wait_for_agent
 
 :agent_ready
 echo [%date% %time%] Agent ready >> "%LOG_FILE%"
 
-REM Force Windows into Extend mode so all connected displays are usable.
-if exist "%SystemRoot%\System32\DisplaySwitch.exe" (
-    "%SystemRoot%\System32\DisplaySwitch.exe" /extend >nul 2>&1
-    timeout /t 2 /nobreak >nul
-)
+REM Wait until local display HTTP endpoint responds before opening browser.
+set HTTP_WAIT=0
+:wait_for_http
+    powershell -NoProfile -Command "try { $r=Invoke-WebRequest -UseBasicParsing -TimeoutSec 2 -Uri 'http://127.0.0.1:3403/'; if ($r.StatusCode -ge 200) { exit 0 } else { exit 1 } } catch { exit 1 }" >nul 2>&1
+    if %errorlevel%==0 goto http_ready
+    set /a HTTP_WAIT+=1
+    set /a HTTP_WAIT_MOD=HTTP_WAIT %% 30
+    if %HTTP_WAIT_MOD%==0 echo [%date% %time%] Still waiting for HTTP on 127.0.0.1:3403... (%HTTP_WAIT%s) >> "%LOG_FILE%"
+    timeout /t 1 /nobreak >nul
+    goto wait_for_http
+
+:http_ready
+echo [%date% %time%] HTTP ready on 127.0.0.1:3403 >> "%LOG_FILE%"
 
 REM ----------------------------------------------------------------
 REM Infinite Chrome loop
@@ -137,12 +149,19 @@ REM ----------------------------------------------------------------
         for /f "usebackq delims=" %%u in ("%URL_SIDECAR%") do set SIDE_URL=%%u
     )
     if not "%SIDE_URL%"=="" (
-        set URL=%SIDE_URL%
+        set USE_SIDE_URL=0
+        echo %SIDE_URL% | find /I "127.0.0.1:3403" >nul && set USE_SIDE_URL=1
+        echo %SIDE_URL% | find /I "localhost:3403" >nul && set USE_SIDE_URL=1
+        if "%USE_SIDE_URL%"=="1" (
+            set URL=%SIDE_URL%
+        ) else (
+            echo [%date% %time%] Ignoring non-local sidecar URL in loop >> "%LOG_FILE%"
+        )
     ) else (
         REM Re-read slug from config on every loop iteration.
         if exist "%CONFIG_FILE%" (
             for /f "delims=" %%a in ('node -e "try{console.log(JSON.parse(require('fs').readFileSync(String.raw`%CONFIG_FILE%`,'utf8')).deviceSlug)}catch(e){console.log('')}" 2^>nul') do (
-                if not "%%a"=="" set URL=http://localhost:3403/display/%%a
+                if not "%%a"=="" set URL=http://127.0.0.1:3403/display/%%a
             )
         )
     )
@@ -157,7 +176,7 @@ REM ----------------------------------------------------------------
         powershell -ExecutionPolicy Bypass -NoProfile -File "%MULTI_LAUNCHER%" -BrowserPath "%BROWSER%" -MultiConfigPath "%MULTI_SIDECAR%" -FallbackUrl "%URL%" -LogFile "%LOG_FILE%"
     ) else (
         echo [%date% %time%] Launching browser: %URL% >> "%LOG_FILE%"
-        start /wait "" "%BROWSER%" --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --no-first-run --no-default-browser-check --start-fullscreen --disable-translate --disable-extensions --autoplay-policy=no-user-gesture-required --disable-features=TranslateUI --user-data-dir="%CHROME_DATA%" "%URL%"
+        start /wait "" "%BROWSER%" --kiosk --noerrdialogs --disable-infobars --disable-session-crashed-bubble --no-first-run --no-default-browser-check --start-fullscreen --disable-translate --disable-extensions --autoplay-policy=no-user-gesture-required --disable-features=TranslateUI --proxy-server=direct:// --proxy-bypass-list=* --user-data-dir="%CHROME_DATA%" "%URL%"
     )
 
     echo [%date% %time%] Browser exited (code: %errorlevel%). Restarting in 3s... >> "%LOG_FILE%"

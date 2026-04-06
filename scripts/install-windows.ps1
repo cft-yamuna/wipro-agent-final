@@ -167,6 +167,7 @@ Start-Sleep -Seconds 2
 Write-Host "[0d] Removing old agent files..." -ForegroundColor Yellow
 Remove-Item -Path $InstallDir -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -Path "C:\ProgramData\Lightman\kiosk-url.txt" -Force -ErrorAction SilentlyContinue
+Remove-Item -Path "C:\ProgramData\Lightman\kiosk-multi.json" -Force -ErrorAction SilentlyContinue
 
 # Remove firewall rule
 Remove-NetFirewallRule -DisplayName "LIGHTMAN Agent WebSocket" -ErrorAction SilentlyContinue
@@ -534,16 +535,6 @@ Write-Host "[15/19] Disabling sleep..." -ForegroundColor Yellow
 powercfg /change monitor-timeout-ac 0 2>&1 | Out-Null
 powercfg /change standby-timeout-ac 0 2>&1 | Out-Null
 powercfg /change hibernate-timeout-ac 0 2>&1 | Out-Null
-
-# --- 15b. Display topology ---
-Write-Host "[15b/19] Enforcing display extend mode..." -ForegroundColor Yellow
-if (Test-Path "$env:SystemRoot\System32\DisplaySwitch.exe") {
-    & "$env:SystemRoot\System32\DisplaySwitch.exe" /extend 2>&1 | Out-Null
-    Start-Sleep -Seconds 2
-    Write-Host "  Display mode set to Extend"
-} else {
-    Write-Host "  DisplaySwitch.exe not found - skipped" -ForegroundColor DarkYellow
-}
 
 # --- 16. Harden ---
 Write-Host "[16/19] Hardening Windows..." -ForegroundColor Yellow

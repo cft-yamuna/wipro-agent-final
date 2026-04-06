@@ -68,8 +68,8 @@ if (Test-Path $IdentityFile) {
     Write-Host "[OK] No existing identity cache found (clean install)" -ForegroundColor DarkGray
 }
 
-# 2. Kiosk display URL - always localhost since agent runs the static server locally on port 3403
-$KioskUrl  = "http://localhost:3403/display/$Slug"
+# 2. Kiosk display URL - use 127.0.0.1 to avoid localhost/proxy edge-cases
+$KioskUrl  = "http://127.0.0.1:3403/display/$Slug"
 
 # 3. Detect browser path
 try {
